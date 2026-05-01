@@ -1,4 +1,8 @@
-from pydantic import Field
+import os
+from pathlib import Path
+from typing import Any
+
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -15,14 +19,31 @@ class Settings(BaseSettings):
     JWT_SECRET_KEY: str = Field(
         ...,
         min_length=32,
-        description="JWT signing secret; set JWT_SECRET_KEY in the environment or .env (never commit real values).",
+        description="JWT signing secret; set JWT_SECRET_KEY or JWT_SECRET_KEY_FILE (never commit real values).",
     )
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
-    ANTHROPIC_API_KEY: str = ""
     MCP_SERVER_URL: str = "http://localhost:8001"
     DEMO_MODE: bool = True
+
+    @model_validator(mode="before")
+    @classmethod
+    def _apply_secret_files(cls, data: Any) -> Any:
+        """Prefer *_FILE mounts (Docker secrets / Key Vault sync) over plain env."""
+        if not isinstance(data, dict):
+            data = {}
+        for key in ("JWT_SECRET_KEY", "MONGODB_URL", "REDIS_URL"):
+            file_path = os.environ.get(f"{key}_FILE")
+            if not file_path:
+                continue
+            try:
+                val = Path(file_path).read_text(encoding="utf-8").strip()
+            except OSError:
+                continue
+            if val:
+                data[key] = val
+        return data
 
 
 settings = Settings()

@@ -1,6 +1,8 @@
-import os
 import httpx
 from fastmcp import FastMCP
+
+from secret_env import secret_or_env
+
 
 def register_otx_tools(mcp: FastMCP, demo_mode: bool, load_mock):
 
@@ -12,7 +14,7 @@ def register_otx_tools(mcp: FastMCP, demo_mode: bool, load_mock):
         async with httpx.AsyncClient() as client:
             r = await client.get(
                 f"https://otx.alienvault.com/api/v1/search/pulses",
-                headers={"X-OTX-API-KEY": os.getenv("OTX_API_KEY", "")},
+                headers={"X-OTX-API-KEY": secret_or_env("OTX_API_KEY")},
                 params={"q": query, "limit": 10},
             )
             return r.json()
@@ -30,6 +32,6 @@ def register_otx_tools(mcp: FastMCP, demo_mode: bool, load_mock):
         async with httpx.AsyncClient() as client:
             r = await client.get(
                 f"https://otx.alienvault.com/api/v1/indicators/{section}/{indicator}/general",
-                headers={"X-OTX-API-KEY": os.getenv("OTX_API_KEY", "")},
+                headers={"X-OTX-API-KEY": secret_or_env("OTX_API_KEY")},
             )
             return r.json()

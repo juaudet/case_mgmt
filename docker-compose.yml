@@ -8,7 +8,9 @@ services:
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:8000
       NEXTAUTH_URL: http://localhost:3000
-      NEXTAUTH_SECRET: dev-secret-change-in-prod
+      NEXTAUTH_SECRET_FILE: /run/secrets/nextauth_secret
+    secrets:
+      - nextauth_secret
     depends_on:
       - backend
 
@@ -19,10 +21,13 @@ services:
     environment:
       MONGODB_URL: mongodb://mongo:27017
       REDIS_URL: redis://redis:6379
-      JWT_SECRET_KEY: dev-jwt-secret-64-chars-minimum-please-change
+      JWT_SECRET_KEY_FILE: /run/secrets/jwt_secret
       DEMO_MODE: 'true'
-      ANTHROPIC_API_KEY: ''
+      ANTHROPIC_API_KEY_FILE: /run/secrets/anthropic_api_key
       MCP_SERVER_URL: http://mcp:8001
+    secrets:
+      - jwt_secret
+      - anthropic_api_key
     depends_on:
       - mongo
       - redis
@@ -34,6 +39,17 @@ services:
       - '8001:8001'
     environment:
       DEMO_MODE: 'true'
+      VT_API_KEY_FILE: /run/secrets/vt_api_key
+      CS_CLIENT_ID_FILE: /run/secrets/cs_client_id
+      CS_CLIENT_SECRET_FILE: /run/secrets/cs_client_secret
+      OTX_API_KEY_FILE: /run/secrets/otx_api_key
+      LDAP_BIND_PASSWORD_FILE: /run/secrets/ldap_bind_password
+    secrets:
+      - vt_api_key
+      - cs_client_id
+      - cs_client_secret
+      - otx_api_key
+      - ldap_bind_password
 
   mongo:
     image: mongo:7
@@ -52,3 +68,21 @@ services:
 volumes:
   mongo_data:
   redis_data:
+
+secrets:
+  jwt_secret:
+    file: ./.secrets/jwt_secret
+  anthropic_api_key:
+    file: ./.secrets/anthropic_api_key
+  nextauth_secret:
+    file: ./.secrets/nextauth_secret
+  vt_api_key:
+    file: ./.secrets/vt_api_key
+  cs_client_id:
+    file: ./.secrets/cs_client_id
+  cs_client_secret:
+    file: ./.secrets/cs_client_secret
+  otx_api_key:
+    file: ./.secrets/otx_api_key
+  ldap_bind_password:
+    file: ./.secrets/ldap_bind_password

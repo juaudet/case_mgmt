@@ -20,6 +20,7 @@ build/
 .env.local
 .env.*.local
 !.env.example
+.secrets/
 
 # Next.js
 .next/
@@ -50,3 +51,11 @@ npm-debug.log*
 coverage/
 .coverage
 htmlcov/
+
+# Local agent/tooling state
+.agents/
+.claude/
+
+# Local secret/config helpers
+mcp-server/secret_env.py
+backend/app/core/secrets.py

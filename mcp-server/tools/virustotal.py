@@ -1,6 +1,8 @@
-import os
 import httpx
 from fastmcp import FastMCP
+
+from secret_env import secret_or_env
+
 
 def register_vt_tools(mcp: FastMCP, demo_mode: bool, load_mock):
 
@@ -12,7 +14,7 @@ def register_vt_tools(mcp: FastMCP, demo_mode: bool, load_mock):
         async with httpx.AsyncClient() as client:
             r = await client.get(
                 f"https://www.virustotal.com/api/v3/ip_addresses/{ip}",
-                headers={"x-apikey": os.getenv("VT_API_KEY", "")},
+                headers={"x-apikey": secret_or_env("VT_API_KEY")},
             )
             return r.json()
 
@@ -24,7 +26,7 @@ def register_vt_tools(mcp: FastMCP, demo_mode: bool, load_mock):
         async with httpx.AsyncClient() as client:
             r = await client.get(
                 f"https://www.virustotal.com/api/v3/files/{hash}",
-                headers={"x-apikey": os.getenv("VT_API_KEY", "")},
+                headers={"x-apikey": secret_or_env("VT_API_KEY")},
             )
             return r.json()
 
@@ -36,7 +38,7 @@ def register_vt_tools(mcp: FastMCP, demo_mode: bool, load_mock):
         async with httpx.AsyncClient() as client:
             r = await client.get(
                 f"https://www.virustotal.com/api/v3/domains/{domain}",
-                headers={"x-apikey": os.getenv("VT_API_KEY", "")},
+                headers={"x-apikey": secret_or_env("VT_API_KEY")},
             )
             return r.json()
 
@@ -48,7 +50,7 @@ def register_vt_tools(mcp: FastMCP, demo_mode: bool, load_mock):
         async with httpx.AsyncClient() as client:
             r = await client.post(
                 "https://www.virustotal.com/api/v3/urls",
-                headers={"x-apikey": os.getenv("VT_API_KEY", "")},
+                headers={"x-apikey": secret_or_env("VT_API_KEY")},
                 data={"url": url},
             )
             return r.json()

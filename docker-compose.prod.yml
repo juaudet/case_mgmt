@@ -6,23 +6,59 @@ services:
     environment:
       NEXT_PUBLIC_API_URL: ${API_URL}
       NEXTAUTH_URL: ${FRONTEND_URL}
-      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      NEXTAUTH_SECRET_FILE: /run/secrets/nextauth_secret
+    secrets:
+      - nextauth_secret
 
   backend:
     image: registry.digitalocean.com/siem/backend:${IMAGE_TAG}
     environment:
-      MONGODB_URL: ${MONGODB_URL}
-      REDIS_URL: ${REDIS_URL}
-      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      MONGODB_URL_FILE: /run/secrets/mongodb_url
+      REDIS_URL_FILE: /run/secrets/redis_url
+      JWT_SECRET_KEY_FILE: /run/secrets/jwt_secret
       DEMO_MODE: 'false'
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      ANTHROPIC_API_KEY_FILE: /run/secrets/anthropic_api_key
       MCP_SERVER_URL: http://mcp:8001
+    secrets:
+      - mongodb_url
+      - redis_url
+      - jwt_secret
+      - anthropic_api_key
 
   mcp:
     image: registry.digitalocean.com/siem/mcp:${IMAGE_TAG}
     environment:
       DEMO_MODE: 'false'
-      VT_API_KEY: ${VT_API_KEY}
-      CS_CLIENT_ID: ${CS_CLIENT_ID}
-      CS_CLIENT_SECRET: ${CS_CLIENT_SECRET}
-      OTX_API_KEY: ${OTX_API_KEY}
+      VT_API_KEY_FILE: /run/secrets/vt_api_key
+      CS_CLIENT_ID_FILE: /run/secrets/cs_client_id
+      CS_CLIENT_SECRET_FILE: /run/secrets/cs_client_secret
+      OTX_API_KEY_FILE: /run/secrets/otx_api_key
+      LDAP_BIND_PASSWORD_FILE: /run/secrets/ldap_bind_password
+    secrets:
+      - vt_api_key
+      - cs_client_id
+      - cs_client_secret
+      - otx_api_key
+      - ldap_bind_password
+
+secrets:
+  mongodb_url:
+    external: true
+  redis_url:
+    external: true
+  jwt_secret:
+    external: true
+  anthropic_api_key:
+    external: true
+  nextauth_secret:
+    external: true
+  vt_api_key:
+    external: true
+  cs_client_id:
+    external: true
+  cs_client_secret:
+    external: true
+  otx_api_key:
+    external: true
+  ldap_bind_password:
+    external: true

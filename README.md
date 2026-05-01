@@ -75,7 +75,13 @@ An AI-powered Security Operations Center (SOC) case management platform that com
 git clone https://github.com/your-org/case-mgmt.git
 cd case-mgmt
 cp .env.example .env
-# Edit .env — in demo mode the defaults work without any API keys
+# Docker Compose mounts secrets from ./.secrets/ (gitignored). Create once:
+mkdir -p .secrets
+openssl rand -hex 32 | tr -d '\n' > .secrets/jwt_secret
+openssl rand -hex 16 | tr -d '\n' > .secrets/nextauth_secret
+# Optional: put a real key in anthropic_api_key for live console streaming; empty file is ok for demo-only
+: > .secrets/anthropic_api_key
+for f in vt_api_key cs_client_id cs_client_secret otx_api_key ldap_bind_password; do : > ".secrets/$f"; done
 ```
 
 ### 2. Start all services
@@ -148,13 +154,17 @@ Included mock scenarios:
 
 | Variable | Default | Description |
 |---|---|---|
-| `MONGODB_URL` | `mongodb://mongo:27017` | MongoDB connection string |
-| `REDIS_URL` | `redis://redis:6379` | Redis connection string |
-| `JWT_SECRET_KEY` | *(required)* | 64-char secret for token signing |
+| `MONGODB_URL` | `mongodb://localhost:27017` | MongoDB connection string (non-Docker / tests) |
+| `MONGODB_URL_FILE` | — | If set, read connection string from this path (overrides `MONGODB_URL`; use with Docker secrets / Key Vault sync) |
+| `REDIS_URL` | `redis://localhost:6379` | Redis URL (non-Docker / tests) |
+| `REDIS_URL_FILE` | — | If set, read Redis URL from this path (overrides `REDIS_URL`) |
+| `JWT_SECRET_KEY` | *(required)* | Min 32 chars; token signing secret (non-Docker / tests) |
+| `JWT_SECRET_KEY_FILE` | `/run/secrets/jwt_secret` in Compose | If set, read JWT secret from this path (overrides `JWT_SECRET_KEY`) |
 | `JWT_ALGORITHM` | `HS256` | JWT signing algorithm |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | `15` | Short-lived access token TTL |
 | `REFRESH_TOKEN_EXPIRE_DAYS` | `7` | Refresh token TTL |
-| `ANTHROPIC_API_KEY` | `''` | Claude API key for AI analysis |
+| `ANTHROPIC_API_KEY` | — | Anthropic API key (local dev without secret files) |
+| `ANTHROPIC_API_KEY_FILE` | `/run/secrets/anthropic_api_key` in Compose | If set, read API key from this path (preferred in Docker) |
 | `DEMO_MODE` | `true` | Use mock fixtures instead of live APIs |
 | `MCP_SERVER_URL` | `http://mcp:8001` | Internal MCP sidecar URL |
 
@@ -163,20 +173,21 @@ Included mock scenarios:
 | Variable | Description |
 |---|---|
 | `DEMO_MODE` | When `true`, return fixture JSON instead of calling live APIs |
-| `VT_API_KEY` | VirusTotal v3 API key |
-| `CS_CLIENT_ID` | CrowdStrike OAuth2 client ID |
-| `CS_CLIENT_SECRET` | CrowdStrike OAuth2 client secret |
-| `OTX_API_KEY` | AlienVault OTX API key |
+| `VT_API_KEY` / `VT_API_KEY_FILE` | VirusTotal v3 API key (file mount preferred in Docker) |
+| `CS_CLIENT_ID` / `CS_CLIENT_ID_FILE` | CrowdStrike OAuth2 client ID |
+| `CS_CLIENT_SECRET` / `CS_CLIENT_SECRET_FILE` | CrowdStrike OAuth2 client secret |
+| `OTX_API_KEY` / `OTX_API_KEY_FILE` | AlienVault OTX API key |
 | `LDAP_HOST` | LDAP server URI (e.g. `ldap://10.0.0.1`) |
 | `LDAP_BIND_DN` | Service account DN for LDAP bind |
-| `LDAP_BIND_PASSWORD` | Service account password |
+| `LDAP_BIND_PASSWORD` / `LDAP_BIND_PASSWORD_FILE` | Service account password |
 | `LDAP_BASE_DN` | LDAP search base (e.g. `dc=corp,dc=local`) |
 
 ### Frontend
 
 | Variable | Description |
 |---|---|
-| `NEXTAUTH_SECRET` | 32-char random secret for NextAuth |
+| `NEXTAUTH_SECRET` | 32-char random secret for NextAuth (set by entrypoint from file in Docker) |
+| `NEXTAUTH_SECRET_FILE` | `/run/secrets/nextauth_secret` in Compose | Path to mounted secret; entrypoint exports `NEXTAUTH_SECRET` |
 | `NEXTAUTH_URL` | Public URL of the frontend |
 | `NEXT_PUBLIC_API_URL` | Public URL of the backend API |
 

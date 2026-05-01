@@ -1,6 +1,8 @@
-import os
 import httpx
 from fastmcp import FastMCP
+
+from secret_env import secret_or_env
+
 
 def register_cs_tools(mcp: FastMCP, demo_mode: bool, load_mock):
 
@@ -66,8 +68,8 @@ async def _get_cs_token() -> str:
         r = await client.post(
             "https://api.crowdstrike.com/oauth2/token",
             data={
-                "client_id": os.getenv("CS_CLIENT_ID", ""),
-                "client_secret": os.getenv("CS_CLIENT_SECRET", ""),
+                "client_id": secret_or_env("CS_CLIENT_ID"),
+                "client_secret": secret_or_env("CS_CLIENT_SECRET"),
             },
         )
         return r.json()["access_token"]

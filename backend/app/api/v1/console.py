@@ -5,8 +5,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from app.core.config import settings
 from app.core.deps import get_current_user, get_db
+from app.core.secrets import read_env_or_secret_file
 from app.services.case_service import get_case
 from app.services.console_service import build_system_prompt
 
@@ -50,6 +50,22 @@ class ConsolePromptRequest(BaseModel):
     context_flags: dict = {}
 
 
+def _get_anthropic_api_key() -> str:
+    try:
+        key = read_env_or_secret_file("ANTHROPIC_API_KEY", on_file_error="raise")
+    except RuntimeError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="Anthropic API key file is not readable",
+        ) from exc
+    if key:
+        return key
+    raise HTTPException(
+        status_code=503,
+        detail="Anthropic API key is not configured",
+    )
+
+
 @router.post("/cases/{case_id}/console/stream")
 async def stream_console(
     case_id: str,
@@ -69,7 +85,8 @@ async def stream_console(
 
     async def event_generator():
         try:
-            client = anthropic.AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
+            api_key = _get_anthropic_api_key()
+            client = anthropic.AsyncAnthropic(api_key=api_key)
             async with client.messages.stream(
                 model="claude-sonnet-4-6",
                 max_tokens=1500,

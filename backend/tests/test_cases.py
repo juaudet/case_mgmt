@@ -151,3 +151,82 @@ async def test_delete_case_admin_only(
         headers={"Authorization": f"Bearer {admin_token}"},
     )
     assert admin_del.status_code == 204
+
+
+@pytest.mark.asyncio
+async def test_ingest_sentinel_case(async_client: AsyncClient, analyst_token: str) -> None:
+    sentinel_payload = {
+        "id": "/subscriptions/test/resourceGroups/rg/providers/Microsoft.OperationalInsights/workspaces/ws/providers/Microsoft.SecurityInsights/incidents/abc",
+        "name": "abc",
+        "type": "Microsoft.SecurityInsights/incidents",
+        "properties": {
+            "title": "My incident",
+            "description": "This is a demo incident",
+            "owner": {
+                "email": "john.doe@contoso.com",
+                "userPrincipalName": "john@contoso.com",
+                "assignedTo": "john doe",
+            },
+            "severity": "High",
+            "status": "Closed",
+            "providerName": "Azure Sentinel",
+            "incidentNumber": 3177,
+        },
+        "entities": [
+            {"kind": "Ip", "properties": {"address": "203.0.113.99"}},
+            {"kind": "Url", "properties": {"url": "https://malicious.example/login"}},
+            {"kind": "DnsResolution", "properties": {"domainName": "evil.example"}},
+            {
+                "kind": "FileHash",
+                "properties": {"algorithm": "SHA256", "hashValue": "ABCDEF1234"},
+            },
+            {"kind": "Account", "properties": {"upn": "victim@contoso.com"}},
+        ],
+    }
+
+    resp = await async_client.post(
+        "/api/v1/cases/ingest/sentinel",
+        json={"payload": sentinel_payload},
+        headers={"Authorization": f"Bearer {analyst_token}"},
+    )
+    assert resp.status_code == 201
+    body = resp.json()
+    assert body["title"] == "My incident"
+    assert body["status"] == "closed"
+    assert body["severity"] == "critical"
+    assert body["assigned_to"] == "john.doe@contoso.com"
+    assert "sentinel" in body["tags"]
+    ioc_values = {f'{ioc["type"]}:{ioc["value"]}' for ioc in body["iocs"]}
+    assert "ipv4:203.0.113.99" in ioc_values
+    assert "url:https://malicious.example/login" in ioc_values
+    assert "domain:evil.example" in ioc_values
+    assert "sha256:abcdef1234" in ioc_values
+    assert "email:victim@contoso.com" in ioc_values
+
+
+@pytest.mark.asyncio
+async def test_ingest_splunk_case(async_client: AsyncClient, analyst_token: str) -> None:
+    splunk_payload = {
+        "result": {
+            "title": "Excessive failed logins",
+            "description": "Multiple failed logins from one source",
+            "severity": "medium",
+            "status": "in progress",
+            "owner": "analyst.kim@corp.local",
+            "app": "ES",
+            "source": "notable",
+        }
+    }
+
+    resp = await async_client.post(
+        "/api/v1/cases/ingest/splunk",
+        json={"payload": splunk_payload},
+        headers={"Authorization": f"Bearer {analyst_token}"},
+    )
+    assert resp.status_code == 201
+    body = resp.json()
+    assert body["title"] == "Excessive failed logins"
+    assert body["status"] == "in_progress"
+    assert body["severity"] == "medium"
+    assert body["assigned_to"] == "analyst.kim@corp.local"
+    assert "splunk" in body["tags"]

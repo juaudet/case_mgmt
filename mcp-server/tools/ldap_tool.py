@@ -1,5 +1,9 @@
 import os
+
 from fastmcp import FastMCP
+
+from secret_env import secret_or_env
+
 
 def register_ldap_tools(mcp: FastMCP, demo_mode: bool, load_mock):
 
@@ -14,7 +18,7 @@ def register_ldap_tools(mcp: FastMCP, demo_mode: bool, load_mock):
             conn = Connection(
                 server,
                 user=os.getenv("LDAP_BIND_DN", ""),
-                password=os.getenv("LDAP_BIND_PASSWORD", ""),
+                password=secret_or_env("LDAP_BIND_PASSWORD"),
                 auto_bind=True,
             )
             conn.search(
