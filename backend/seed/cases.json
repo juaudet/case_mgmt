@@ -1,0 +1,125 @@
+[
+  {
+    "case_number": "CASE-2024-0847",
+    "year": 2024,
+    "title": "Credential Stuffing + Lateral Movement — Finance OU",
+    "description": "Multiple failed login attempts from IP 185.220.101.47 followed by successful authentication as finance user j.wong. Lateral movement detected to FS-FINANCE-01. Mimikatz artifact found (hash: a3f1c9b2e847d6f0391cc52a4e1b7f3d).",
+    "severity": "critical",
+    "status": "in_progress",
+    "assigned_to": "lead.reyes@corp.local",
+    "mitre_tactics": ["TA0001", "TA0006", "TA0008"],
+    "mitre_techniques": ["T1078", "T1003.001", "T1550.002"],
+    "tags": ["credential-stuffing", "lateral-movement", "finance"],
+    "iocs": [
+      {"type": "ipv4", "value": "185.220.101.47", "score": 92, "label": "malicious C2"},
+      {"type": "sha256", "value": "a3f1c9b2e847d6f0391cc52a4e1b7f3d", "score": 78, "label": "Mimikatz"},
+      {"type": "domain", "value": "corp-mail-auth.ru", "score": 88, "label": "EvilProxy"}
+    ],
+    "timeline": [
+      {"timestamp": "2024-11-15T08:23:00Z", "actor": "system", "action": "alert_triggered", "detail": "SIEM alert: brute force from 185.220.101.47"},
+      {"timestamp": "2024-11-15T08:45:00Z", "actor": "analyst.kim@corp.local", "action": "created", "detail": "Case opened for investigation"},
+      {"timestamp": "2024-11-15T09:10:00Z", "actor": "lead.reyes@corp.local", "action": "escalated", "detail": "Escalated to Tier 2 — lateral movement confirmed"}
+    ],
+    "playbook_id": "credential_theft",
+    "created_by": "analyst.kim@corp.local"
+  },
+  {
+    "case_number": "CASE-2024-0851",
+    "year": 2024,
+    "title": "Phishing Campaign — Word Macro Dropper",
+    "description": "Three Finance department recipients opened malicious Word document with macro dropper. Domain corp-mail-auth.ru used as phishing sender.",
+    "severity": "high",
+    "status": "open",
+    "assigned_to": "analyst.kim@corp.local",
+    "mitre_tactics": ["TA0001"],
+    "mitre_techniques": ["T1566.001"],
+    "tags": ["phishing", "macro", "finance"],
+    "iocs": [
+      {"type": "domain", "value": "corp-mail-auth.ru", "score": 88, "label": "EvilProxy"},
+      {"type": "sha256", "value": "c2e4f9a1b3d7e081234bc56a7f918e2d", "score": 65, "label": "Word macro dropper"}
+    ],
+    "timeline": [
+      {"timestamp": "2024-11-16T10:05:00Z", "actor": "system", "action": "alert_triggered", "detail": "Email gateway flagged suspicious Word attachment"}
+    ],
+    "playbook_id": "phishing",
+    "created_by": "analyst.kim@corp.local"
+  },
+  {
+    "case_number": "CASE-2024-0839",
+    "year": 2024,
+    "title": "Ransomware — LockBit Variant on FS-FINANCE-01",
+    "description": "LockBit ransomware variant encrypted shared drive on FS-FINANCE-01. Resolved via backup restore. Loader hash identified.",
+    "severity": "critical",
+    "status": "closed",
+    "assigned_to": "lead.reyes@corp.local",
+    "mitre_tactics": ["TA0040"],
+    "mitre_techniques": ["T1486"],
+    "tags": ["ransomware", "lockbit", "encryption"],
+    "iocs": [
+      {"type": "sha256", "value": "b7e2f4a9c183d0e5274bc61a3f928e1c", "score": 91, "label": "LockBit loader"}
+    ],
+    "timeline": [
+      {"timestamp": "2024-11-10T02:15:00Z", "actor": "system", "action": "alert_triggered", "detail": "Mass file encryption detected on FS-FINANCE-01"},
+      {"timestamp": "2024-11-10T08:30:00Z", "actor": "admin@corp.local", "action": "resolved", "detail": "Backup restore completed, host reimaged"}
+    ],
+    "playbook_id": "ransomware",
+    "created_by": "analyst.kim@corp.local"
+  },
+  {
+    "case_number": "CASE-2024-0855",
+    "year": 2024,
+    "title": "Malware Beacon — Cobalt Strike Implant",
+    "description": "Cobalt Strike beacon detected on WKST-MW-007 communicating to 45.142.212.100. C2 traffic blocked at perimeter.",
+    "severity": "medium",
+    "status": "open",
+    "assigned_to": null,
+    "mitre_tactics": ["TA0011"],
+    "mitre_techniques": ["T1071.001"],
+    "tags": ["cobalt-strike", "c2", "beacon"],
+    "iocs": [
+      {"type": "ipv4", "value": "45.142.212.100", "score": 74, "label": "Cobalt Strike C2"}
+    ],
+    "timeline": [
+      {"timestamp": "2024-11-17T14:20:00Z", "actor": "system", "action": "alert_triggered", "detail": "EDR detected Cobalt Strike beacon pattern"}
+    ],
+    "playbook_id": "malware_c2",
+    "created_by": "system"
+  },
+  {
+    "case_number": "CASE-2024-0831",
+    "year": 2024,
+    "title": "DDoS — Volumetric UDP Flood on Public API",
+    "description": "Volumetric UDP flood targeted public API endpoint. Mitigated via CDN rate limiting.",
+    "severity": "low",
+    "status": "closed",
+    "assigned_to": "analyst.kim@corp.local",
+    "mitre_tactics": ["TA0040"],
+    "mitre_techniques": ["T1498"],
+    "tags": ["ddos", "udp", "cdn"],
+    "iocs": [],
+    "timeline": [
+      {"timestamp": "2024-11-08T19:45:00Z", "actor": "system", "action": "alert_triggered", "detail": "API latency spike — DDoS detected"},
+      {"timestamp": "2024-11-08T20:15:00Z", "actor": "analyst.kim@corp.local", "action": "resolved", "detail": "CDN mitigation applied, traffic normalized"}
+    ],
+    "playbook_id": "ddos",
+    "created_by": "analyst.kim@corp.local"
+  },
+  {
+    "case_number": "CASE-2024-0860",
+    "year": 2024,
+    "title": "Insider Threat — Bulk SharePoint Download",
+    "description": "Departing employee account performed bulk download of 14GB from SharePoint Finance folder. DLP alert triggered.",
+    "severity": "high",
+    "status": "open",
+    "assigned_to": "lead.reyes@corp.local",
+    "mitre_tactics": ["TA0010"],
+    "mitre_techniques": ["T1048"],
+    "tags": ["insider-threat", "exfiltration", "sharepoint"],
+    "iocs": [],
+    "timeline": [
+      {"timestamp": "2024-11-18T16:30:00Z", "actor": "system", "action": "alert_triggered", "detail": "DLP: bulk download 14GB by departing employee"}
+    ],
+    "playbook_id": null,
+    "created_by": "system"
+  }
+]
