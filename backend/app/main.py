@@ -7,7 +7,7 @@ from app.api.v1 import auth, cases, console, enrichment, playbooks
 from app.core.config import settings
 from app.db.mongo import connect_mongo, disconnect_mongo, get_database
 from app.db.redis import connect_redis, disconnect_redis, get_redis_client
-from app.db.bootstrap import ensure_demo_users
+from app.db.bootstrap import ensure_demo_data
 
 
 @asynccontextmanager
@@ -16,7 +16,7 @@ async def lifespan(app: FastAPI):
     await connect_redis()
     app.state.db = get_database()
     app.state.redis = get_redis_client()
-    await ensure_demo_users(app.state.db, settings.DEMO_MODE)
+    await ensure_demo_data(app.state.db, settings.DEMO_MODE)
     yield
     await disconnect_mongo()
     await disconnect_redis()
