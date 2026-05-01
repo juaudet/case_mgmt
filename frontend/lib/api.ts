@@ -94,3 +94,23 @@ export function useEnrichIOC(caseId: string) {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['case', caseId] }),
   })
 }
+
+export function useEnrichLDAP(caseId: string) {
+  const headers = useAuthHeaders()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () =>
+      apiFetch(`/api/v1/cases/${caseId}/enrich/ldap`, headers, { method: 'POST' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['case', caseId] }),
+  })
+}
+
+export function useEnrichGeoIP(caseId: string) {
+  const headers = useAuthHeaders()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ ip }: { ip: string }) =>
+      apiFetch(`/api/v1/cases/${caseId}/enrich/geoip/${ip}`, headers),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['case', caseId] }),
+  })
+}

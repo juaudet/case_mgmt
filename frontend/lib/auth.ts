@@ -5,6 +5,8 @@ import { z } from 'zod'
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  // Docker/local dev can trigger Auth.js host validation failures even when env vars are set.
+  trustHost: true,
   providers: [
     Credentials({
       credentials: {

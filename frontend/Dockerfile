@@ -5,6 +5,7 @@ RUN npm ci
 
 FROM base AS builder
 COPY . .
+RUN mkdir -p public
 RUN npm run build
 
 FROM node:20-alpine AS runner
@@ -14,6 +15,7 @@ COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
 COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN sed -i 's/\r$//' /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
 EXPOSE 3000
 ENTRYPOINT ["/docker-entrypoint.sh"]

@@ -26,4 +26,4 @@ register_ldap_tools(mcp, DEMO_MODE, load_mock)
 if __name__ == "__main__":
     import uvicorn
     # FastMCP exposes an ASGI app
-    uvicorn.run(mcp.http_app(), host="0.0.0.0", port=8001)
+    uvicorn.run(mcp.sse_app(), host="0.0.0.0", port=8001)

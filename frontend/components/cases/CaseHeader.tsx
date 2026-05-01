@@ -3,84 +3,130 @@ import type { Case, CaseStatus } from '@/types'
 import { SeverityBadge, StatusBadge } from './StatusBadge'
 import { useUpdateCase } from '@/lib/api'
 import { formatDate } from '@/lib/utils'
-import { Clock, Shield, User } from 'lucide-react'
 
 const STATUS_OPTIONS: CaseStatus[] = ['open', 'in_progress', 'closed', 'false_positive']
+
+function ActionBtn({
+  children,
+  danger,
+  onClick,
+}: {
+  children: React.ReactNode
+  danger?: boolean
+  onClick?: () => void
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="text-[11px] font-medium px-2.5 py-[5px] rounded border transition-colors"
+      style={
+        danger
+          ? {
+              borderColor: '#F09595',
+              background: 'rgba(226,75,74,0.1)',
+              color: '#E24B4A',
+            }
+          : {
+              borderColor: '#1E3048',
+              background: '#162030',
+              color: '#7A9BB5',
+            }
+      }
+    >
+      {children}
+    </button>
+  )
+}
 
 export function CaseHeader({ caseData }: { caseData: Case }) {
   const updateCase = useUpdateCase(caseData.id)
 
-  function handleStatusChange(status: CaseStatus) {
+  function handleStatus(status: CaseStatus) {
     updateCase.mutate({ status })
   }
 
+  const mitrePrimary = caseData.mitre_techniques[0] ?? caseData.mitre_tactics[0] ?? ''
+
   return (
-    <div className="bg-[#162030] border border-[#1E3048] rounded-xl p-5 space-y-4">
-      {/* Title row */}
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-mono text-blue-400">{caseData.case_number}</span>
-            <SeverityBadge severity={caseData.severity} />
-          </div>
-          <h1 className="text-xl font-bold text-white">{caseData.title}</h1>
+    <div
+      className="border-b px-5 py-3.5 shrink-0"
+      style={{ background: '#0F1923', borderColor: '#1E3048' }}
+    >
+      {/* ID + title row */}
+      <div className="mb-2">
+        <div
+          className="text-[11px] font-mono mb-0.5"
+          style={{ color: '#4A6080' }}
+        >
+          {caseData.case_number}
+          {mitrePrimary && (
+            <span>
+              {' '}
+              &nbsp;·&nbsp; {mitrePrimary}
+            </span>
+          )}
         </div>
-
-        {/* Status updater */}
-        <div className="shrink-0">
-          <select
-            value={caseData.status}
-            onChange={(e) => handleStatusChange(e.target.value as CaseStatus)}
-            disabled={updateCase.isPending}
-            className="bg-[#0F1923] border border-[#1E3048] rounded-lg px-3 py-1.5 text-sm text-slate-300 focus:outline-none focus:border-blue-500 disabled:opacity-50"
-          >
-            {STATUS_OPTIONS.map((s) => (
-              <option key={s} value={s}>
-                {s.replace('_', ' ')}
-              </option>
-            ))}
-          </select>
+        <div className="text-[15px] font-medium text-white leading-snug">
+          {caseData.title}
         </div>
       </div>
 
-      <p className="text-sm text-slate-400">{caseData.description}</p>
-
-      {/* Meta row */}
-      <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500">
-        {caseData.assigned_to && (
-          <div className="flex items-center gap-1.5">
-            <User className="w-3.5 h-3.5" />
-            {caseData.assigned_to}
-          </div>
-        )}
-        <div className="flex items-center gap-1.5">
-          <Clock className="w-3.5 h-3.5" />
-          Created {formatDate(caseData.created_at)}
-        </div>
-        {caseData.sla_deadline && (
-          <div className="flex items-center gap-1.5 text-amber-400">
-            <Shield className="w-3.5 h-3.5" />
-            SLA: {formatDate(caseData.sla_deadline)}
-          </div>
-        )}
+      {/* Badge row */}
+      <div className="flex flex-wrap items-center gap-1.5 mb-2.5">
+        <SeverityBadge severity={caseData.severity} />
         <StatusBadge status={caseData.status} />
+        {caseData.mitre_tactics.map((t) => (
+          <span
+            key={t}
+            className="text-[11px] font-medium px-2 py-0.5 rounded"
+            style={{ background: '#1A3A5C', color: '#7AB8F5' }}
+          >
+            {t}
+          </span>
+        ))}
+        {caseData.assigned_to && (
+          <span
+            className="text-[11px] font-medium px-2 py-0.5 rounded"
+            style={{ background: '#162030', color: '#7A9BB5', border: '0.5px solid #1E3048' }}
+          >
+            Assigned: {caseData.assigned_to}
+          </span>
+        )}
+        <span
+          className="text-[11px] font-medium px-2 py-0.5 rounded"
+          style={{ background: '#162030', color: '#7A9BB5', border: '0.5px solid #1E3048' }}
+        >
+          Created {formatDate(caseData.created_at)}
+        </span>
       </div>
 
-      {/* MITRE tags */}
-      {(caseData.mitre_tactics.length > 0 || caseData.mitre_techniques.length > 0) && (
-        <div className="flex flex-wrap gap-1.5">
-          {caseData.mitre_tactics.map((t) => (
-            <span key={t} className="px-2 py-0.5 bg-red-900/30 text-red-300 text-xs rounded font-mono border border-red-900/50">
-              {t}
-            </span>
+      {/* Action buttons */}
+      <div className="flex flex-wrap gap-1.5">
+        <ActionBtn onClick={() => handleStatus('in_progress')}>▷ Run Playbook</ActionBtn>
+        <ActionBtn>↑ Escalate</ActionBtn>
+        <ActionBtn>⊞ Summary</ActionBtn>
+        <ActionBtn danger onClick={() => handleStatus('false_positive')}>
+          ⊘ False Positive
+        </ActionBtn>
+        {/* Hidden status select for full control */}
+        <select
+          value={caseData.status}
+          onChange={(e) => handleStatus(e.target.value as CaseStatus)}
+          disabled={updateCase.isPending}
+          className="ml-2 text-[11px] rounded border px-2 py-[5px] focus:outline-none disabled:opacity-50"
+          style={{
+            background: '#162030',
+            borderColor: '#1E3048',
+            color: '#7A9BB5',
+          }}
+        >
+          {STATUS_OPTIONS.map((s) => (
+            <option key={s} value={s}>
+              {s.replace('_', ' ')}
+            </option>
           ))}
-          {caseData.mitre_techniques.map((t) => (
-            <span key={t} className="px-2 py-0.5 bg-[#1A3A5C] text-blue-300 text-xs rounded font-mono">
-              {t}
-            </span>
-          ))}
-        </div>
-      )}
+        </select>
+      </div>
     </div>
   )
 }

@@ -43,6 +43,11 @@ class Settings(BaseSettings):
                 continue
             if val:
                 data[key] = val
+        # In demo mode, allow boot without local secret files.
+        demo_mode_raw = data.get("DEMO_MODE", os.environ.get("DEMO_MODE", "true"))
+        demo_mode = str(demo_mode_raw).strip().lower() in {"1", "true", "yes", "on"}
+        if demo_mode and not data.get("JWT_SECRET_KEY"):
+            data["JWT_SECRET_KEY"] = "demo_jwt_secret_key_change_me_0123456789abcdef"
         return data
 
 

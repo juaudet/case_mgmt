@@ -1,93 +1,169 @@
 'use client'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { useSession } from 'next-auth/react'
-import { LayoutDashboard, FolderOpen, BookOpen, Shield, User, ChevronLeft } from 'lucide-react'
+import { usePathname, useSearchParams } from 'next/navigation'
 import { cn } from '@/lib/utils'
 
-const navItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/cases', label: 'Cases', icon: FolderOpen },
-  { href: '/playbooks', label: 'Playbooks', icon: BookOpen },
+const SEVERITY_DOTS: Record<string, string> = {
+  critical: '#E24B4A',
+  high: '#BA7517',
+  medium: '#378ADD',
+  low: '#639922',
+}
+
+const queueItems = [
+  { label: 'Open Cases', status: 'open', icon: '◉', count: null },
+  { label: 'In Progress', status: 'in_progress', icon: '○', count: null },
+  { label: 'Closed', status: 'closed', icon: '✓', count: null },
+  { label: 'False Positives', status: 'false_positive', icon: '⊘', count: null },
 ]
 
-export function Sidebar({
-  collapsed,
-  onToggle,
+const playbookItems = [
+  { label: 'Phishing Response', href: '/playbooks' },
+  { label: 'Credential Theft', href: '/playbooks' },
+  { label: 'Lateral Movement', href: '/playbooks' },
+]
+
+const enrichmentItems = [
+  { label: 'LDAP Lookup', icon: '⊞' },
+  { label: 'IOC Feed', icon: '⊡' },
+  { label: 'GeoIP Intel', icon: '⊟' },
+]
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      className="px-3.5 mb-1"
+      style={{
+        fontSize: 10,
+        fontWeight: 500,
+        textTransform: 'uppercase',
+        letterSpacing: '0.08em',
+        color: '#4A6080',
+      }}
+    >
+      {children}
+    </div>
+  )
+}
+
+function SidebarItem({
+  active,
+  href,
+  children,
 }: {
-  collapsed: boolean
-  onToggle: () => void
+  active?: boolean
+  href?: string
+  children: React.ReactNode
 }) {
+  const base =
+    'flex items-center gap-2 px-3.5 py-[7px] text-[12px] cursor-pointer transition-colors duration-100 relative'
+  const cls = cn(
+    base,
+    active
+      ? 'bg-[#162030] text-white font-medium border-r-2 border-[#E24B4A]'
+      : 'text-[#7A9BB5] hover:bg-[#162030] hover:text-white'
+  )
+  if (href) {
+    return (
+      <Link href={href} className={cls}>
+        {children}
+      </Link>
+    )
+  }
+  return <div className={cls}>{children}</div>
+}
+
+function CountBadge({ n }: { n: number }) {
+  return (
+    <span
+      className="ml-auto rounded-full px-1.5 py-[1px]"
+      style={{
+        fontSize: 10,
+        background: 'rgba(226,75,74,0.15)',
+        color: '#E24B4A',
+      }}
+    >
+      {n}
+    </span>
+  )
+}
+
+export function Sidebar() {
   const pathname = usePathname()
-  const { data: session } = useSession()
+  const searchParams = useSearchParams()
+  const currentStatus = searchParams.get('status')
+  const currentSeverity = searchParams.get('severity')
 
   return (
     <aside
-      className={cn(
-        'flex flex-col bg-[#0B1520] border-r border-[#1E3048] transition-all duration-200',
-        collapsed ? 'w-16' : 'w-56'
-      )}
+      className="overflow-y-auto border-r"
+      style={{
+        background: '#0B1520',
+        borderColor: '#1E3048',
+        gridRow: '2',
+        paddingTop: 12,
+        paddingBottom: 12,
+      }}
     >
-      {/* Logo */}
-      <div className="flex items-center gap-3 px-4 py-5 border-b border-[#1E3048]">
-        <Shield className="w-6 h-6 text-blue-400 shrink-0" />
-        {!collapsed && <span className="font-bold text-white text-sm">SIEM Manager</span>}
-      </div>
-
-      {/* Nav */}
-      <nav className="flex-1 py-4 space-y-1 px-2">
-        {navItems.map(({ href, label, icon: Icon }) => {
-          const active = pathname.startsWith(href)
+      {/* Queue */}
+      <div className="mb-5">
+        <SectionLabel>Queue</SectionLabel>
+        {queueItems.map((item) => {
+          const href = `/cases?status=${item.status}`
+          const active = pathname.startsWith('/cases') && currentStatus === item.status
           return (
-            <Link
-              key={href}
-              href={href}
-              className={cn(
-                'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition',
-                active
-                  ? 'bg-[#1A3A5C] text-white'
-                  : 'text-slate-400 hover:bg-[#162030] hover:text-white'
-              )}
-            >
-              <Icon className="w-4 h-4 shrink-0" />
-              {!collapsed && label}
-            </Link>
+            <SidebarItem key={item.status} href={href} active={active}>
+              <span className="w-3.5 text-center text-[13px]">{item.icon}</span>
+              <span className="flex-1">{item.label}</span>
+              {item.status === 'open' && <CountBadge n={12} />}
+            </SidebarItem>
           )
         })}
-      </nav>
+      </div>
 
-      {/* User */}
-      {session?.user && (
-        <div
-          className={cn(
-            'px-3 py-4 border-t border-[#1E3048] flex items-center gap-2',
-            collapsed && 'justify-center'
-          )}
-        >
-          <div className="w-7 h-7 rounded-full bg-[#1A3A5C] flex items-center justify-center shrink-0">
-            <User className="w-3.5 h-3.5 text-blue-300" />
-          </div>
-          {!collapsed && (
-            <div className="min-w-0">
-              <p className="text-xs font-medium text-white truncate">{session.user.name}</p>
-              <p className="text-xs text-slate-500 capitalize">
-                {(session.user as { role?: string }).role}
-              </p>
-            </div>
-          )}
-        </div>
-      )}
+      {/* Severity */}
+      <div className="mb-5">
+        <SectionLabel>Severity</SectionLabel>
+        {(['critical', 'high', 'medium', 'low'] as const).map((sev) => {
+          const href = `/cases?severity=${sev}`
+          const active = pathname.startsWith('/cases') && currentSeverity === sev
+          return (
+            <SidebarItem key={sev} href={href} active={active}>
+              <span
+                className="w-3.5 text-center text-[13px]"
+                style={{ color: SEVERITY_DOTS[sev] }}
+              >
+                ●
+              </span>
+              <span className="flex-1 capitalize">{sev}</span>
+              {sev === 'critical' && <CountBadge n={3} />}
+              {sev === 'high' && <CountBadge n={5} />}
+            </SidebarItem>
+          )
+        })}
+      </div>
 
-      {/* Toggle */}
-      <button
-        onClick={onToggle}
-        className="mx-auto mb-3 p-1 text-slate-500 hover:text-white transition"
-        aria-label="Toggle sidebar"
-      >
-        <ChevronLeft
-          className={cn('w-4 h-4 transition-transform', collapsed && 'rotate-180')}
-        />
-      </button>
+      {/* Enrichment */}
+      <div className="mb-5">
+        <SectionLabel>Enrichment</SectionLabel>
+        {enrichmentItems.map((item) => (
+          <SidebarItem key={item.label}>
+            <span className="w-3.5 text-center text-[13px]">{item.icon}</span>
+            <span>{item.label}</span>
+          </SidebarItem>
+        ))}
+      </div>
+
+      {/* Playbooks */}
+      <div className="mb-5">
+        <SectionLabel>Playbooks</SectionLabel>
+        {playbookItems.map((item) => (
+          <SidebarItem key={item.label} href={item.href}>
+            <span className="w-3.5 text-center text-[13px]">▷</span>
+            <span>{item.label}</span>
+          </SidebarItem>
+        ))}
+      </div>
     </aside>
   )
 }

@@ -75,13 +75,9 @@ An AI-powered Security Operations Center (SOC) case management platform that com
 git clone https://github.com/your-org/case-mgmt.git
 cd case-mgmt
 cp .env.example .env
-# Docker Compose mounts secrets from ./.secrets/ (gitignored). Create once:
+# Optional: create .secrets/ if you want to provide real keys locally.
+# In demo mode, the app now auto-falls back to built-in demo secrets.
 mkdir -p .secrets
-openssl rand -hex 32 | tr -d '\n' > .secrets/jwt_secret
-openssl rand -hex 16 | tr -d '\n' > .secrets/nextauth_secret
-# Optional: put a real key in anthropic_api_key for live console streaming; empty file is ok for demo-only
-: > .secrets/anthropic_api_key
-for f in vt_api_key cs_client_id cs_client_secret otx_api_key ldap_bind_password; do : > ".secrets/$f"; done
 ```
 
 ### 2. Start all services
@@ -158,8 +154,8 @@ Included mock scenarios:
 | `MONGODB_URL_FILE` | — | If set, read connection string from this path (overrides `MONGODB_URL`; use with Docker secrets / Key Vault sync) |
 | `REDIS_URL` | `redis://localhost:6379` | Redis URL (non-Docker / tests) |
 | `REDIS_URL_FILE` | — | If set, read Redis URL from this path (overrides `REDIS_URL`) |
-| `JWT_SECRET_KEY` | *(required)* | Min 32 chars; token signing secret (non-Docker / tests) |
-| `JWT_SECRET_KEY_FILE` | `/run/secrets/jwt_secret` in Compose | If set, read JWT secret from this path (overrides `JWT_SECRET_KEY`) |
+| `JWT_SECRET_KEY` | *(required outside demo mode)* | Min 32 chars; token signing secret (non-Docker / tests) |
+| `JWT_SECRET_KEY_FILE` | `/run/secrets/jwt_secret` in Compose | If set, read JWT secret from this path (overrides `JWT_SECRET_KEY`); optional in demo mode |
 | `JWT_ALGORITHM` | `HS256` | JWT signing algorithm |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | `15` | Short-lived access token TTL |
 | `REFRESH_TOKEN_EXPIRE_DAYS` | `7` | Refresh token TTL |
@@ -186,8 +182,8 @@ Included mock scenarios:
 
 | Variable | Description |
 |---|---|
-| `NEXTAUTH_SECRET` | 32-char random secret for NextAuth (set by entrypoint from file in Docker) |
-| `NEXTAUTH_SECRET_FILE` | `/run/secrets/nextauth_secret` in Compose | Path to mounted secret; entrypoint exports `NEXTAUTH_SECRET` |
+| `NEXTAUTH_SECRET` | 32-char random secret for NextAuth; in demo mode entrypoint falls back to a demo value if unset |
+| `NEXTAUTH_SECRET_FILE` | `/run/secrets/nextauth_secret` in Compose | Optional path to mounted secret; entrypoint exports `NEXTAUTH_SECRET` when present |
 | `NEXTAUTH_URL` | Public URL of the frontend |
 | `NEXT_PUBLIC_API_URL` | Public URL of the backend API |
 

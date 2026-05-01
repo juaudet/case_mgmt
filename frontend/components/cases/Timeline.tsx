@@ -1,46 +1,103 @@
 import type { TimelineEvent } from '@/types'
-import { formatDate } from '@/lib/utils'
-import { AlertCircle, Settings, CheckCircle } from 'lucide-react'
 
-function actionIcon(action: string) {
-  if (action === 'created') return <CheckCircle className="w-4 h-4 text-green-400" />
-  if (action === 'alert_triggered') return <AlertCircle className="w-4 h-4 text-red-400" />
-  if (action.includes('escalat')) return <AlertCircle className="w-4 h-4 text-orange-400" />
-  if (action.includes('resolv')) return <CheckCircle className="w-4 h-4 text-blue-400" />
-  return <Settings className="w-4 h-4 text-slate-400" />
+type DotColor = 'red' | 'amber' | 'blue' | 'green' | 'default'
+
+const DOT_STYLES: Record<DotColor, { border: string; background: string }> = {
+  red:     { border: '#E24B4A', background: '#FCEBEB' },
+  amber:   { border: '#BA7517', background: '#FAEEDA' },
+  blue:    { border: '#378ADD', background: '#1A3A5C' },
+  green:   { border: '#639922', background: '#EAF3DE' },
+  default: { border: '#1E3048', background: '#162030' },
+}
+
+function dotColor(action: string): DotColor {
+  const a = action.toLowerCase()
+  if (/alert|critical|impossible|travel|pass.the.hash|lateral/.test(a)) return 'red'
+  if (/escalat|bypass|enumerat|brute|malwar|phish/.test(a)) return 'amber'
+  if (/analyst|enrich|console|assign|investigat|open/.test(a)) return 'blue'
+  if (/contain|resolv|close|creat|disabled|revoke|patch|remediat/.test(a)) return 'green'
+  return 'default'
+}
+
+function formatTs(ts: string): string {
+  try {
+    return new Date(ts).toISOString().replace('T', ' ').slice(0, 19) + ' UTC'
+  } catch {
+    return ts
+  }
 }
 
 export function Timeline({ events }: { events: TimelineEvent[] }) {
   const sorted = [...events].sort(
-    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
   )
 
   if (sorted.length === 0) {
-    return <p className="text-sm text-slate-500 py-4">No timeline events</p>
+    return <p className="text-[12px] py-4" style={{ color: '#4A6080' }}>No timeline events</p>
   }
 
   return (
-    <div className="space-y-0">
-      {sorted.map((event, i) => (
-        <div key={i} className="flex gap-3 pb-4">
-          <div className="flex flex-col items-center">
-            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-[#1E3048] shrink-0">
-              {actionIcon(event.action)}
-            </div>
-            {i < sorted.length - 1 && <div className="w-px flex-1 bg-[#1E3048] my-1" />}
-          </div>
-          <div className="flex-1 pb-2">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-white capitalize">
+    <ul className="relative list-none" style={{ paddingLeft: 0 }}>
+      {/* Vertical line */}
+      <div
+        className="absolute"
+        style={{
+          left: 6,
+          top: 6,
+          bottom: 6,
+          width: 1,
+          background: '#1E3048',
+        }}
+      />
+
+      {sorted.map((event, i) => {
+        const color = dotColor(event.action)
+        const dot = DOT_STYLES[color]
+        return (
+          <li key={i} className="flex gap-3.5 pb-3.5 relative">
+            {/* Dot */}
+            <div
+              className="shrink-0 rounded-full border-2 z-10 mt-0.5"
+              style={{
+                width: 13,
+                height: 13,
+                borderColor: dot.border,
+                background: dot.background,
+              }}
+            />
+
+            {/* Content */}
+            <div className="flex-1 min-w-0">
+              <div
+                className="text-[12px] font-medium mb-0.5 leading-snug"
+                style={{ color: '#D1E0F0' }}
+              >
                 {event.action.replace(/_/g, ' ')}
-              </span>
-              <span className="text-xs text-slate-500">{formatDate(event.timestamp)}</span>
+              </div>
+              {event.detail && (
+                <div
+                  className="text-[11px] leading-relaxed mb-0.5"
+                  style={{ color: '#4A6080' }}
+                >
+                  {event.detail}
+                </div>
+              )}
+              <div
+                className="text-[10px] font-mono"
+                style={{ color: '#4A6080' }}
+              >
+                {formatTs(event.timestamp)}
+                {event.actor && (
+                  <span>
+                    {' '}
+                    &nbsp;·&nbsp; {event.actor}
+                  </span>
+                )}
+              </div>
             </div>
-            <p className="text-xs text-slate-400 mt-0.5">{event.detail}</p>
-            <p className="text-xs text-slate-600 mt-0.5">by {event.actor}</p>
-          </div>
-        </div>
-      ))}
-    </div>
+          </li>
+        )
+      })}
+    </ul>
   )
 }
