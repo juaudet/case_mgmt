@@ -1,0 +1,20 @@
+[
+  {
+    "email": "analyst.kim@corp.local",
+    "full_name": "Kim Analyst",
+    "role": "analyst",
+    "password": "Demo1234!"
+  },
+  {
+    "email": "lead.reyes@corp.local",
+    "full_name": "Reyes Lead",
+    "role": "tier2",
+    "password": "Demo1234!"
+  },
+  {
+    "email": "admin@corp.local",
+    "full_name": "Admin User",
+    "role": "admin",
+    "password": "Admin5678!"
+  }
+]
