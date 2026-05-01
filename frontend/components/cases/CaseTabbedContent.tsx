@@ -3,12 +3,15 @@ import { useState } from 'react'
 import type { Case } from '@/types'
 import { Timeline } from './Timeline'
 import { IOCTable } from './IOCTable'
+import { MCPIntegrationPanel } from '@/components/enrichment/MCPIntegrationPanel'
+import { AnalystConsole } from '@/components/console/AnalystConsole'
 
 const TABS = [
   { id: 'timeline', label: 'Timeline' },
   { id: 'ioc', label: 'IOC Analysis' },
+  { id: 'mcp', label: 'MCP Findings' },
+  { id: 'console', label: 'Analyst Console' },
   { id: 'logs', label: 'Raw Logs' },
-  { id: 'notes', label: 'Notes' },
 ] as const
 
 type TabId = (typeof TABS)[number]['id']
@@ -55,22 +58,14 @@ export function CaseTabbedContent({ caseData }: { caseData: Case }) {
           </div>
         )}
 
+        {active === 'mcp' && <MCPIntegrationPanel caseData={caseData} caseId={caseData.id} />}
+
+        {active === 'console' && <AnalystConsole caseId={caseData.id} />}
+
         {active === 'logs' && (
           <p className="text-[12px] py-4" style={{ color: '#4A6080' }}>
             Raw log ingestion not available in this view.
           </p>
-        )}
-
-        {active === 'notes' && (
-          <textarea
-            placeholder="Add analyst notes…"
-            className="w-full h-48 rounded border p-3 text-[12px] resize-y focus:outline-none placeholder:opacity-50"
-            style={{
-              background: '#0F1923',
-              borderColor: '#1E3048',
-              color: '#D1E0F0',
-            }}
-          />
         )}
       </div>
     </div>

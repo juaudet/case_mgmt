@@ -1,166 +1,174 @@
 'use client'
-import { useState, useRef } from 'react'
-import { useSession } from 'next-auth/react'
-import { Send, Cpu } from 'lucide-react'
-import { ContextToggles } from './ContextToggles'
+import { useState } from 'react'
+import { Send, Sparkles, Trash2 } from 'lucide-react'
+import { useConsoleHistory, useSubmitConsolePrompt } from '@/lib/api'
+import { ContextToggles, CONTEXT_LABELS, type ContextFlags } from './ContextToggles'
 import { PromptHistory } from './PromptHistory'
 
 const TEMPLATES = [
-  { key: 'attribution', label: 'Attribution Analysis' },
-  { key: 'exfil', label: 'Exfil Scope Check' },
-  { key: 'blast_radius', label: 'Blast Radius' },
-  { key: 'hunt_iocs', label: 'Hunt New IOCs' },
-  { key: 'exec_summary', label: 'Exec Summary' },
-  { key: 'remediation', label: 'Remediation Steps' },
-  { key: 'timeline', label: 'Reconstruct Timeline' },
+  { key: 'attribution', label: 'Attribution analysis' },
+  { key: 'exfil', label: 'Exfil scope check' },
+  { key: 'blast_radius', label: 'Blast radius' },
+  { key: 'hunt_iocs', label: 'Hunt new IOCs' },
+  { key: 'exec_summary', label: 'Exec summary' },
+  { key: 'remediation', label: 'Remediation steps' },
+  { key: 'timeline', label: 'Reconstruct timeline' },
+  { key: '', label: 'Custom' },
 ]
 
-interface ConsoleTurn {
-  prompt: string
-  response: string
-  template?: string
-  timestamp: string
+const DEFAULT_CONTEXT_FLAGS: ContextFlags = {
+  case_details: true,
+  ldap: true,
+  ioc_data: true,
+  virustotal: false,
+  crowdstrike: false,
+  playbook_state: true,
 }
 
+const MODES = ['Free-form', 'Structured', 'Chain-of-thought']
+
 export function AnalystConsole({ caseId }: { caseId: string }) {
-  const { data: session } = useSession()
   const [prompt, setPrompt] = useState('')
   const [template, setTemplate] = useState('')
-  const [streaming, setStreaming] = useState(false)
-  const [currentResponse, setCurrentResponse] = useState('')
-  const [history, setHistory] = useState<ConsoleTurn[]>([])
-  const [contextFlags, setContextFlags] = useState({
-    case_details: true,
-    ldap: true,
-    ioc_data: true,
-    virustotal: false,
-    crowdstrike: false,
-    playbook_state: true,
-  })
-  const responseRef = useRef<HTMLDivElement>(null)
+  const [mode, setMode] = useState(MODES[0])
+  const [contextFlags, setContextFlags] = useState<ContextFlags>(DEFAULT_CONTEXT_FLAGS)
+  const consoleHistory = useConsoleHistory(caseId)
+  const submitPrompt = useSubmitConsolePrompt(caseId)
+  const turns = consoleHistory.data?.history ?? []
+  const activeContextLabels = (Object.keys(contextFlags) as Array<keyof ContextFlags>)
+    .filter((key) => contextFlags[key])
+    .map((key) => CONTEXT_LABELS[key])
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-
-  async function handleSubmit() {
+  function handleSubmit() {
     if (!prompt.trim() && !template) return
-    setStreaming(true)
-    setCurrentResponse('')
-    let full = ''
+    submitPrompt.mutate({
+      prompt,
+      template: template || undefined,
+      context_flags: contextFlags,
+    })
+  }
 
-    try {
-      const res = await fetch(`${API_URL}/api/v1/cases/${caseId}/console/stream`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session?.user?.accessToken ?? ''}`,
-        },
-        body: JSON.stringify({
-          prompt,
-          template: template || undefined,
-          context_flags: contextFlags,
-        }),
-      })
+  function handleClear() {
+    setPrompt('')
+    setTemplate('')
+  }
 
-      const reader = res.body?.getReader()
-      const decoder = new TextDecoder()
-      if (!reader) return
-
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-        const chunk = decoder.decode(value)
-        const lines = chunk.split('\n')
-        for (const line of lines) {
-          if (line.startsWith('data: ') && line !== 'data: [DONE]') {
-            try {
-              const data = JSON.parse(line.slice(6))
-              if (data.delta) {
-                full += data.delta
-                setCurrentResponse(full)
-                responseRef.current?.scrollIntoView({ behavior: 'smooth' })
-              }
-            } catch {
-              // skip malformed SSE lines
-            }
-          }
-        }
-      }
-    } finally {
-      setStreaming(false)
-      if (full) {
-        setHistory((h) => [
-          {
-            prompt: template ? `[Template: ${template}]` : prompt,
-            response: full,
-            template,
-            timestamp: new Date().toISOString(),
-          },
-          ...h,
-        ])
-        setCurrentResponse('')
-        setPrompt('')
-        setTemplate('')
-      }
-    }
+  function handleReuse(reusedPrompt: string) {
+    setPrompt(reusedPrompt)
+    setTemplate('')
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center gap-2">
-        <Cpu className="w-4 h-4 text-blue-400" />
-        <h2 className="text-sm font-semibold text-white">Analyst AI Console</h2>
-        <span className="text-xs text-slate-500 ml-auto">claude-sonnet-4-6</span>
+    <div className="flex flex-col gap-5 text-[#F4F1E8]">
+      <div className="rounded-2xl border border-[#2D2D2A] bg-[#171714] p-5">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-xs uppercase tracking-[0.24em] text-[#97C459]">Analyst AI console</p>
+            <h2 className="mt-2 text-2xl font-semibold">Analyst AI console — {caseId}</h2>
+          </div>
+          <span className="rounded-full border border-[#464641] bg-[#22221F] px-3 py-1 text-xs text-[#C9C3B4]">
+            Persisted history enabled
+          </span>
+        </div>
       </div>
 
-      <ContextToggles flags={contextFlags} onChange={setContextFlags} />
+      <div className="flex flex-wrap gap-2">
+        {activeContextLabels.map((label) => (
+          <span
+            key={label}
+            className="rounded-full border border-[#97C459] bg-[#DFF0CC] px-3 py-1 text-xs font-medium text-[#3B6D11]"
+          >
+            Context injected: {label}
+          </span>
+        ))}
+      </div>
 
-      {/* Template selector */}
-      <div>
-        <label className="text-xs text-slate-500 block mb-1">Prompt Template</label>
-        <select
-          value={template}
-          onChange={(e) => setTemplate(e.target.value)}
-          className="w-full bg-[#162030] border border-[#1E3048] rounded-lg px-3 py-2 text-sm text-slate-300 focus:outline-none"
-        >
-          <option value="">Custom prompt...</option>
-          {TEMPLATES.map((t) => (
-            <option key={t.key} value={t.key}>
-              {t.label}
-            </option>
+      <section className="rounded-2xl border border-[#2D2D2A] bg-[#171714] p-5 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-[#9B9A92]">Analyst prompt</p>
+            <h3 className="mt-1 text-lg font-semibold">Ask the case copilot</h3>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {MODES.map((modeLabel) => (
+              <button
+                className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+                  mode === modeLabel
+                    ? 'border-[#97C459] bg-[#DFF0CC] text-[#3B6D11]'
+                    : 'border-[#464641] bg-[#2D2D2A] text-[#9B9A92]'
+                }`}
+                key={modeLabel}
+                onClick={() => setMode(modeLabel)}
+                type="button"
+              >
+                {modeLabel}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-5 flex flex-wrap gap-2">
+          {TEMPLATES.map((item) => (
+            <button
+              className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+                template === item.key
+                  ? 'border-[#97C459] bg-[#DFF0CC] text-[#3B6D11]'
+                  : 'border-[#464641] bg-[#2D2D2A] text-[#C9C3B4] hover:border-[#686862]'
+              }`}
+              key={item.label}
+              onClick={() => setTemplate(item.key)}
+              type="button"
+            >
+              {item.label}
+            </button>
           ))}
-        </select>
-      </div>
+        </div>
 
-      {/* Custom prompt textarea */}
-      {!template && (
         <textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          placeholder="Ask about this case..."
+          placeholder="Ask about initial access, lateral movement, blast radius, or response actions..."
           rows={3}
-          className="w-full bg-[#162030] border border-[#1E3048] rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 resize-none"
+          className="mt-5 w-full resize-none rounded-2xl border border-[#464641] bg-[#22221F] px-4 py-3 text-sm text-[#F4F1E8] placeholder-[#77766F] outline-none transition focus:border-[#97C459]"
         />
-      )}
 
-      <button
-        onClick={handleSubmit}
-        disabled={streaming || (!prompt.trim() && !template)}
-        className="flex items-center justify-center gap-2 px-4 py-2 bg-[#1A3A5C] hover:bg-[#2A5A8C] disabled:opacity-50 text-white text-sm rounded-lg transition"
-      >
-        <Send className="w-3.5 h-3.5" />
-        {streaming ? 'Streaming...' : 'Send'}
-      </button>
-
-      {/* Streaming response */}
-      {(streaming || currentResponse) && (
-        <div className="bg-[#1E2A38] border border-[#2A3A4E] rounded-lg p-4 text-xs text-slate-200 font-mono whitespace-pre-wrap max-h-64 overflow-y-auto">
-          {currentResponse}
-          {streaming && <span className="animate-pulse text-blue-400">▊</span>}
-          <div ref={responseRef} />
+        <div className="mt-2 flex justify-between text-xs text-[#9B9A92]">
+          <span>{template ? `Template: ${template}` : 'Template: custom'}</span>
+          <span>{prompt.length} characters</span>
         </div>
-      )}
 
-      <PromptHistory turns={history} />
+        <div className="mt-5">
+          <ContextToggles flags={contextFlags} onChange={setContextFlags} />
+        </div>
+
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+          <button
+            className="inline-flex items-center gap-2 rounded-full border border-[#464641] bg-[#2D2D2A] px-4 py-2 text-sm font-medium text-[#C9C3B4] transition hover:border-[#686862]"
+            onClick={handleClear}
+            type="button"
+          >
+            <Trash2 className="h-4 w-4" />
+            Clear
+          </button>
+          <button
+            className="inline-flex items-center gap-2 rounded-full bg-[#DFF0CC] px-5 py-2 text-sm font-semibold text-[#3B6D11] transition hover:bg-[#CFE8B5] disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={submitPrompt.isPending || (!prompt.trim() && !template)}
+            onClick={handleSubmit}
+            type="button"
+          >
+            {submitPrompt.isPending ? <Sparkles className="h-4 w-4 animate-pulse" /> : <Send className="h-4 w-4" />}
+            {submitPrompt.isPending ? 'Submitting...' : 'Submit prompt'}
+          </button>
+        </div>
+      </section>
+
+      {consoleHistory.isLoading ? (
+        <div className="rounded-2xl border border-[#2D2D2A] bg-[#171714] p-5 text-sm text-[#9B9A92]">
+          Loading persisted prompt history...
+        </div>
+      ) : (
+        <PromptHistory turns={turns} onReuse={handleReuse} />
+      )}
     </div>
   )
 }

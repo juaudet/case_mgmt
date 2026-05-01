@@ -230,3 +230,36 @@ async def test_ingest_splunk_case(async_client: AsyncClient, analyst_token: str)
     assert body["severity"] == "medium"
     assert body["assigned_to"] == "analyst.kim@corp.local"
     assert "splunk" in body["tags"]
+
+
+@pytest.mark.asyncio
+async def test_case_response_includes_mcp_and_console_records(
+    async_client: AsyncClient, analyst_token: str
+) -> None:
+    create_resp = await async_client.post(
+        "/api/v1/cases",
+        json=CASE_PAYLOAD,
+        headers={"Authorization": f"Bearer {analyst_token}"},
+    )
+    case_id = create_resp.json()["id"]
+
+    await async_client.post(
+        f"/api/v1/cases/{case_id}/timeline",
+        json={
+            "timestamp": "2024-11-14T10:14:02Z",
+            "actor": "analyst@test.local",
+            "action": "note",
+            "detail": "Baseline event",
+        },
+        headers={"Authorization": f"Bearer {analyst_token}"},
+    )
+
+    resp = await async_client.get(
+        f"/api/v1/cases/{case_id}",
+        headers={"Authorization": f"Bearer {analyst_token}"},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["mcp_calls"] == []
+    assert body["mcp_findings"] == []
+    assert body["console_history"] == []

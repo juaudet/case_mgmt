@@ -1,7 +1,6 @@
 'use client'
-import { useState } from 'react'
 import type { Case, PlaybookStep, Playbook } from '@/types'
-import { CheckCircle, Circle, ChevronRight, Cpu } from 'lucide-react'
+import { CheckCircle, Circle, Cpu, Wrench } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export function PlaybookRunner({
@@ -16,34 +15,75 @@ export function PlaybookRunner({
   const state = caseData.playbook_state
   const currentStepId = state?.current_step_id
   const completed = state?.completed_steps ?? []
+  const phases = [
+    { title: 'Phase 1 — Initial triage & scoping', steps: playbook.steps.slice(0, 4) },
+    { title: 'Phase 2 — Containment', steps: playbook.steps.slice(4, 8) },
+    { title: 'Phase 3 — Investigation & evidence collection', steps: playbook.steps.slice(8) },
+  ]
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2 mb-4">
-        <Cpu className="w-4 h-4 text-blue-400" />
-        <h3 className="text-sm font-semibold text-white">{playbook.name}</h3>
-        <span className="text-xs text-slate-500 ml-auto">
-          {completed.length}/{playbook.steps.length} steps
-        </span>
+    <div className="space-y-4 text-[#F4F1E8]">
+      <div className="rounded-2xl border border-[#464641] bg-[#171714] p-5">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="rounded-xl border border-[#464641] bg-[#242421] p-2">
+            <Cpu className="w-4 h-4 text-[#97C459]" />
+          </div>
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.2em] text-[#9B9A92]">Playbook runner</p>
+            <h3 className="text-xl font-semibold text-white">{playbook.name}</h3>
+          </div>
+          <span className="ml-auto rounded-full border border-[#464641] bg-[#242421] px-3 py-1 text-[12px] text-[#C9C3B4]">
+            {completed.length} / {playbook.steps.length} steps complete
+          </span>
+        </div>
+        {playbook.description && (
+          <p className="mt-3 max-w-3xl text-[12px] leading-5 text-[#C9C3B4]">{playbook.description}</p>
+        )}
       </div>
-      {playbook.steps.map((step) => {
-        const isDone = completed.includes(step.step_id)
-        const isCurrent = step.step_id === currentStepId
+
+      {phases.map((phase) => {
+        const phaseComplete = phase.steps.filter((step) => completed.includes(step.step_id)).length
         return (
-          <StepCard
-            key={step.step_id}
-            step={step}
-            isDone={isDone}
-            isCurrent={isCurrent}
-            onComplete={(data) => onStepComplete(step.step_id, data)}
-          />
+          <section
+            key={phase.title}
+            className="rounded-2xl border border-[#464641] bg-[#242421] shadow-lg shadow-black/10"
+          >
+            <div className="flex items-center justify-between gap-3 border-b border-[#3B3B37] px-4 py-3">
+              <div>
+                <h4 className="text-[14px] font-semibold text-[#F5F2E8]">{phase.title}</h4>
+                <p className="mt-0.5 text-[11px] text-[#9B9A92]">Phase progress and required evidence</p>
+              </div>
+              <span className="rounded-full border border-[#5B5B54] bg-[#2D2D2A] px-3 py-1 text-[12px] font-semibold text-[#D7ECFF]">
+                {phaseComplete} / {phase.steps.length}
+              </span>
+            </div>
+            <div className="divide-y divide-[#3B3B37]">
+              {phase.steps.length > 0 ? (
+                phase.steps.map((step) => {
+                  const isDone = completed.includes(step.step_id)
+                  const isCurrent = step.step_id === currentStepId
+                  return (
+                    <StepRow
+                      key={step.step_id}
+                      step={step}
+                      isDone={isDone}
+                      isCurrent={isCurrent}
+                      onComplete={() => onStepComplete(step.step_id, {})}
+                    />
+                  )
+                })
+              ) : (
+                <div className="px-4 py-4 text-[12px] text-[#7D7A70]">No steps in this phase.</div>
+              )}
+            </div>
+          </section>
         )
       })}
     </div>
   )
 }
 
-function StepCard({
+function StepRow({
   step,
   isDone,
   isCurrent,
@@ -52,108 +92,79 @@ function StepCard({
   step: PlaybookStep
   isDone: boolean
   isCurrent: boolean
-  onComplete: (data: Record<string, unknown>) => void
+  onComplete: () => void
 }) {
-  const [expanded, setExpanded] = useState(isCurrent)
-  const [resultInput, setResultInput] = useState('')
-
   return (
     <div
       className={cn(
-        'border rounded-lg overflow-hidden transition',
+        'grid gap-3 px-4 py-4 transition md:grid-cols-[32px_1fr_180px]',
         isDone
-          ? 'border-green-900/50 bg-green-900/10'
+          ? 'bg-[#1C2619]'
           : isCurrent
-          ? 'border-blue-700 bg-[#1A2A3E]'
-          : 'border-[#1E3048] bg-[#162030]'
+          ? 'bg-[#1A2A3E]'
+          : 'bg-[#242421]'
       )}
     >
       <button
-        onClick={() => setExpanded((e) => !e)}
-        className="w-full flex items-center gap-3 px-4 py-3 text-left"
+        aria-label={`Mark ${step.title} complete`}
+        disabled={isDone}
+        onClick={onComplete}
+        className="mt-0.5 flex h-6 w-6 items-center justify-center rounded-full disabled:cursor-default"
       >
         {isDone ? (
-          <CheckCircle className="w-4 h-4 text-green-400 shrink-0" />
+          <CheckCircle className="h-5 w-5 text-[#97C459]" />
         ) : (
-          <Circle className="w-4 h-4 text-slate-500 shrink-0" />
+          <Circle className={cn('h-5 w-5', isCurrent ? 'text-[#378ADD]' : 'text-[#7D7A70]')} />
         )}
-        <span
-          className={cn(
-            'text-sm flex-1',
-            isDone
-              ? 'text-slate-400 line-through'
-              : isCurrent
-              ? 'text-white font-medium'
-              : 'text-slate-400'
-          )}
-        >
-          {step.title}
-        </span>
-        {step.mitre_technique && (
-          <span className="text-xs font-mono text-slate-500">{step.mitre_technique}</span>
-        )}
-        <ChevronRight
-          className={cn('w-4 h-4 text-slate-500 transition-transform', expanded && 'rotate-90')}
-        />
       </button>
 
-      {expanded && (
-        <div className="px-4 pb-4 space-y-3">
-          <p className="text-xs text-slate-400">{step.description}</p>
-          {step.mcp_tools.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {step.mcp_tools.map((tool) => (
-                <span
-                  key={tool}
-                  className="px-2 py-0.5 bg-[#1A3A5C] text-blue-300 text-xs rounded font-mono"
-                >
-                  {tool}
-                </span>
-              ))}
-            </div>
-          )}
-          {step.branches.length > 0 && (
-            <div className="space-y-1">
-              <p className="text-xs text-slate-500">Branches:</p>
-              {step.branches.map((branch) => (
-                <div
-                  key={branch.when}
-                  className="flex items-center gap-2 text-xs text-slate-400"
-                >
-                  <span className="font-mono text-blue-400">{branch.when}</span>
-                  <span>→</span>
-                  <span className="text-slate-300">{branch.label}</span>
-                </div>
-              ))}
-            </div>
-          )}
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-2">
+          <h5 className={cn('text-[13px] font-semibold', isDone ? 'text-[#A8C997]' : 'text-white')}>
+            {step.title}
+          </h5>
           {isCurrent && !isDone && (
-            <div className="space-y-2">
-              {step.condition_field && (
-                <div>
-                  <label className="text-xs text-slate-500 block mb-1">
-                    {step.condition_field} (branch condition)
-                  </label>
-                  <input
-                    value={resultInput}
-                    onChange={(e) => setResultInput(e.target.value)}
-                    className="w-full bg-[#0F1923] border border-[#1E3048] rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-blue-500"
-                    placeholder={`Enter ${step.condition_field}`}
-                  />
-                </div>
-              )}
-              <button
-                onClick={() =>
-                  onComplete(step.condition_field ? { [step.condition_field]: resultInput } : {})
-                }
-                className="px-4 py-1.5 bg-[#1A3A5C] hover:bg-[#2A5A8C] text-white text-xs rounded transition"
-              >
-                Mark Complete
-              </button>
-            </div>
+            <span className="rounded-full bg-[#1A3A5C] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#7AB8F5]">
+              Current
+            </span>
           )}
         </div>
-      )}
+        <p className="mt-1 text-[12px] leading-5 text-[#C9C3B4]">{step.description}</p>
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {step.mitre_technique && (
+            <span className="rounded border border-[#5B5B54] bg-[#171714] px-2 py-0.5 font-mono text-[10px] text-[#9B9A92]">
+              {step.mitre_technique}
+            </span>
+          )}
+          {step.mcp_tools.map((tool) => (
+            <span
+              key={tool}
+              className="inline-flex items-center gap-1 rounded border border-[#2C4664] bg-[#1A3A5C] px-2 py-0.5 font-mono text-[10px] text-[#D7ECFF]"
+            >
+              <Wrench className="h-3 w-3" />
+              {tool}
+            </span>
+          ))}
+          {step.branches.map((branch) => (
+            <span
+              key={branch.when}
+              className="rounded border border-[#5B5B54] bg-[#2D2D2A] px-2 py-0.5 text-[10px] text-[#C9C3B4]"
+            >
+              {branch.when} → {branch.label}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex items-start justify-end">
+        <button
+          disabled={isDone}
+          onClick={onComplete}
+          className="rounded-md border border-[#5B5B54] bg-[#2D2D2A] px-3 py-1.5 text-[11px] font-semibold text-[#F5F2E8] transition hover:border-[#378ADD] hover:text-[#D7ECFF] disabled:border-[#3B3B37] disabled:text-[#7D7A70]"
+        >
+          {isDone ? 'Completed' : 'Mark Complete'}
+        </button>
+      </div>
     </div>
   )
 }

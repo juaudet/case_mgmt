@@ -31,6 +31,9 @@ async def create_case(db: AsyncIOMotorDatabase, data: CaseCreate, created_by: st
             }
         ],
         "iocs": [],
+        "mcp_calls": [],
+        "mcp_findings": [],
+        "console_history": [],
     }
     result = await db.cases.insert_one(doc)
     doc["id"] = str(result.inserted_id)

@@ -1,12 +1,17 @@
 import json
+from datetime import datetime, timezone
+from uuid import uuid4
 
 import anthropic
+from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
+from motor.motor_asyncio import AsyncIOMotorDatabase
 from pydantic import BaseModel
 
 from app.core.deps import get_current_user, get_db
 from app.core.secrets import read_env_or_secret_file
+from app.models.user import UserInDB
 from app.services.case_service import get_case
 from app.services.console_service import build_system_prompt
 
@@ -66,6 +71,20 @@ def _get_anthropic_api_key() -> str:
     )
 
 
+async def generate_console_response(prompt_text: str, system_prompt: str) -> str:
+    api_key = _get_anthropic_api_key()
+    client = anthropic.AsyncAnthropic(api_key=api_key)
+    message = await client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=1500,
+        system=system_prompt,
+        messages=[{"role": "user", "content": prompt_text}],
+    )
+    return "".join(
+        block.text for block in message.content if getattr(block, "type", None) == "text"
+    )
+
+
 @router.post("/cases/{case_id}/console/stream")
 async def stream_console(
     case_id: str,
@@ -100,6 +119,61 @@ async def stream_console(
         yield "data: [DONE]\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+
+@router.get("/cases/{case_id}/console/history")
+async def get_console_history(
+    case_id: str,
+    current_user: UserInDB = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+) -> dict:
+    try:
+        object_id = ObjectId(case_id)
+    except Exception:
+        raise HTTPException(status_code=404, detail="Case not found")
+
+    case = await db.cases.find_one({"_id": object_id})
+    if not case:
+        raise HTTPException(status_code=404, detail="Case not found")
+    return {"history": case.get("console_history", [])}
+
+
+@router.post("/cases/{case_id}/console/prompt")
+async def create_console_prompt(
+    case_id: str,
+    body: ConsolePromptRequest,
+    current_user: UserInDB = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_db),
+) -> dict:
+    case = await get_case(db, case_id)
+    if not case:
+        raise HTTPException(status_code=404, detail="Case not found")
+
+    prompt_text = body.prompt
+    if body.template and body.template in PROMPT_TEMPLATES:
+        prompt_text = PROMPT_TEMPLATES[body.template]
+
+    system_prompt = build_system_prompt(case, body.context_flags)
+    response_text = await generate_console_response(prompt_text, system_prompt)
+    now = datetime.now(timezone.utc)
+    turn = {
+        "id": str(uuid4()),
+        "prompt": prompt_text,
+        "response": response_text,
+        "template": body.template,
+        "context_flags": body.context_flags,
+        "sources_used": [key for key, enabled in body.context_flags.items() if enabled],
+        "created_at": now,
+        "actor": current_user.email,
+    }
+    await db.cases.update_one(
+        {"_id": ObjectId(case_id)},
+        {
+            "$push": {"console_history": {"$each": [turn], "$position": 0}},
+            "$set": {"updated_at": now},
+        },
+    )
+    return {"turn": turn}
 
 
 @router.get("/cases/{case_id}/console/templates")

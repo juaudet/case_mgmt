@@ -1,4 +1,5 @@
 'use client'
+import Link from 'next/link'
 import type { Case, CaseStatus } from '@/types'
 import { SeverityBadge, StatusBadge } from './StatusBadge'
 import { useUpdateCase } from '@/lib/api'
@@ -9,29 +10,40 @@ const STATUS_OPTIONS: CaseStatus[] = ['open', 'in_progress', 'closed', 'false_po
 function ActionBtn({
   children,
   danger,
+  href,
   onClick,
 }: {
   children: React.ReactNode
   danger?: boolean
+  href?: string
   onClick?: () => void
 }) {
+  const className = "text-[12px] font-semibold px-3.5 py-2 rounded-md border transition-colors"
+  const style = danger
+    ? {
+        borderColor: '#F09595',
+        background: 'rgba(226,75,74,0.1)',
+        color: '#E24B4A',
+      }
+    : {
+        borderColor: '#2C4664',
+        background: '#1A3A5C',
+        color: '#D7ECFF',
+      }
+
+  if (href) {
+    return (
+      <Link href={href} className={className} style={style}>
+        {children}
+      </Link>
+    )
+  }
+
   return (
     <button
       onClick={onClick}
-      className="text-[11px] font-medium px-2.5 py-[5px] rounded border transition-colors"
-      style={
-        danger
-          ? {
-              borderColor: '#F09595',
-              background: 'rgba(226,75,74,0.1)',
-              color: '#E24B4A',
-            }
-          : {
-              borderColor: '#1E3048',
-              background: '#162030',
-              color: '#7A9BB5',
-            }
-      }
+      className={className}
+      style={style}
     >
       {children}
     </button>
@@ -101,8 +113,17 @@ export function CaseHeader({ caseData }: { caseData: Case }) {
       </div>
 
       {/* Action buttons */}
-      <div className="flex flex-wrap gap-1.5">
-        <ActionBtn onClick={() => handleStatus('in_progress')}>▷ Run Playbook</ActionBtn>
+      <div className="flex flex-wrap gap-2">
+        <ActionBtn
+          href={
+            caseData.playbook_id
+              ? `/cases/${caseData.id}/playbook/${caseData.playbook_id}`
+              : undefined
+          }
+          onClick={caseData.playbook_id ? undefined : () => handleStatus('in_progress')}
+        >
+          ▷ Run Playbook
+        </ActionBtn>
         <ActionBtn>↑ Escalate</ActionBtn>
         <ActionBtn>⊞ Summary</ActionBtn>
         <ActionBtn danger onClick={() => handleStatus('false_positive')}>
@@ -113,7 +134,7 @@ export function CaseHeader({ caseData }: { caseData: Case }) {
           value={caseData.status}
           onChange={(e) => handleStatus(e.target.value as CaseStatus)}
           disabled={updateCase.isPending}
-          className="ml-2 text-[11px] rounded border px-2 py-[5px] focus:outline-none disabled:opacity-50"
+          className="ml-1 text-[11px] rounded border px-2 py-2 focus:outline-none disabled:opacity-50"
           style={{
             background: '#162030',
             borderColor: '#1E3048',

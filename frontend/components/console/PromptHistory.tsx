@@ -1,45 +1,77 @@
 'use client'
-import { useState } from 'react'
-import { ChevronDown } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
+import type { ConsoleHistoryTurn } from '@/types'
 
-interface Turn {
-  prompt: string
-  response: string
-  timestamp: string
-}
-
-export function PromptHistory({ turns }: { turns: Turn[] }) {
-  const [openIdx, setOpenIdx] = useState<number | null>(null)
-
-  if (!turns.length) return null
+export function PromptHistory({
+  turns,
+  onReuse,
+}: {
+  turns: ConsoleHistoryTurn[]
+  onReuse?: (prompt: string) => void
+}) {
+  if (!turns.length) {
+    return (
+      <section className="rounded-2xl border border-[#2D2D2A] bg-[#171714] p-5">
+        <p className="text-sm font-semibold text-[#F4F1E8]">Prompt history</p>
+        <p className="mt-2 text-sm text-[#9B9A92]">No persisted prompts yet.</p>
+      </section>
+    )
+  }
 
   return (
-    <div className="space-y-2">
-      <p className="text-xs text-slate-500">History ({turns.length})</p>
-      {turns.map((turn, i) => (
-        <div key={i} className="border border-[#1E3048] rounded-lg overflow-hidden">
-          <button
-            onClick={() => setOpenIdx(openIdx === i ? null : i)}
-            className="w-full flex items-center justify-between px-3 py-2 bg-[#162030] hover:bg-[#1A2A3E] transition text-left"
-          >
-            <span className="text-xs text-slate-300 truncate flex-1">{turn.prompt}</span>
-            <span className="text-xs text-slate-600 ml-2 shrink-0">
-              {formatDate(turn.timestamp)}
-            </span>
-            <ChevronDown
-              className={`w-3.5 h-3.5 text-slate-500 ml-2 transition-transform ${
-                openIdx === i ? 'rotate-180' : ''
-              }`}
-            />
-          </button>
-          {openIdx === i && (
-            <div className="bg-[#1E2A38] text-xs text-slate-300 p-3 font-mono whitespace-pre-wrap max-h-48 overflow-y-auto">
+    <section className="space-y-3">
+      <div className="flex items-end justify-between">
+        <div>
+          <p className="text-xs uppercase tracking-[0.2em] text-[#9B9A92]">Persisted history</p>
+          <h3 className="mt-1 text-lg font-semibold text-[#F4F1E8]">Prompt history</h3>
+        </div>
+        <span className="rounded-full border border-[#464641] bg-[#22221F] px-3 py-1 text-xs text-[#C9C3B4]">
+          {turns.length} turns
+        </span>
+      </div>
+
+      <div className="space-y-3">
+        {turns.map((turn) => (
+          <article key={turn.id} className="rounded-2xl border border-[#2D2D2A] bg-[#171714] p-4 shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-xs uppercase tracking-[0.18em] text-[#9B9A92]">Prompt</p>
+                <p className="mt-1 text-sm font-medium text-[#F4F1E8]">{turn.prompt}</p>
+              </div>
+              <div className="text-right text-xs text-[#9B9A92]">
+                <p>{formatDate(turn.created_at)}</p>
+                <p>{turn.actor}</p>
+              </div>
+            </div>
+
+            <div className="mt-4 rounded-xl border border-[#2D2D2A] bg-[#22221F] p-3 text-sm leading-6 text-[#D8D2C3]">
               {turn.response}
             </div>
-          )}
-        </div>
-      ))}
-    </div>
+
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap gap-2">
+                {turn.sources_used.map((source) => (
+                  <span
+                    key={source}
+                    className="rounded-full border border-[#464641] bg-[#2D2D2A] px-2.5 py-1 text-xs text-[#D8D2C3]"
+                  >
+                    {source}
+                  </span>
+                ))}
+              </div>
+              {onReuse && (
+                <button
+                  className="rounded-full border border-[#97C459] px-3 py-1 text-xs font-medium text-[#DFF0CC] transition hover:bg-[#2B3B1B]"
+                  onClick={() => onReuse(turn.prompt)}
+                  type="button"
+                >
+                  Reuse prompt
+                </button>
+              )}
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
   )
 }

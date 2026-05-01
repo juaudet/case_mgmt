@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useSession } from 'next-auth/react'
-import type { Case, CaseListItem, Playbook } from '@/types'
+import type { Case, CaseListItem, ConsoleHistoryTurn, MCPState, Playbook } from '@/types'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
@@ -112,5 +112,74 @@ export function useEnrichGeoIP(caseId: string) {
     mutationFn: ({ ip }: { ip: string }) =>
       apiFetch(`/api/v1/cases/${caseId}/enrich/geoip/${ip}`, headers),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['case', caseId] }),
+  })
+}
+
+export function useMCPState(caseId: string) {
+  const headers = useAuthHeaders()
+  return useQuery<MCPState>({
+    queryKey: ['case', caseId, 'mcp'],
+    queryFn: () => apiFetch(`/api/v1/cases/${caseId}/mcp`, headers),
+    enabled: !!caseId,
+  })
+}
+
+export function useRunMCPTool(caseId: string) {
+  const headers = useAuthHeaders()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: { tool_name: string; params: Record<string, unknown> }) =>
+      apiFetch(`/api/v1/cases/${caseId}/mcp/run`, headers, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['case', caseId] })
+      qc.invalidateQueries({ queryKey: ['case', caseId, 'mcp'] })
+    },
+  })
+}
+
+export function useConsoleHistory(caseId: string) {
+  const headers = useAuthHeaders()
+  return useQuery<{ history: ConsoleHistoryTurn[] }>({
+    queryKey: ['case', caseId, 'console-history'],
+    queryFn: () => apiFetch(`/api/v1/cases/${caseId}/console/history`, headers),
+    enabled: !!caseId,
+  })
+}
+
+export function useSubmitConsolePrompt(caseId: string) {
+  const headers = useAuthHeaders()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: {
+      prompt: string
+      template?: string
+      context_flags: Record<string, boolean>
+    }) =>
+      apiFetch(`/api/v1/cases/${caseId}/console/prompt`, headers, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['case', caseId] })
+      qc.invalidateQueries({ queryKey: ['case', caseId, 'console-history'] })
+    },
+  })
+}
+
+export function useCompletePlaybookStep(caseId: string) {
+  const headers = useAuthHeaders()
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: { stepId: string; resultData: Record<string, unknown> }) =>
+      apiFetch(`/api/v1/cases/${caseId}/playbook/step/${data.stepId}/complete`, headers, {
+        method: 'POST',
+        body: JSON.stringify({ result_data: data.resultData }),
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['case', caseId] })
+    },
   })
 }

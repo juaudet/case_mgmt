@@ -37,6 +37,27 @@ function EnrichRow({ label, value, highlight }: { label: string; value: string; 
   )
 }
 
+function MiniButton({
+  children,
+  disabled,
+  onClick,
+}: {
+  children: React.ReactNode
+  disabled?: boolean
+  onClick?: () => void
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className="mt-2 w-full rounded border px-2 py-1.5 text-[11px] font-medium transition disabled:opacity-50"
+      style={{ background: '#1A3A5C', borderColor: '#2C4664', color: '#D7ECFF' }}
+    >
+      {children}
+    </button>
+  )
+}
+
 function StatCard({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="rounded p-2.5" style={{ background: '#162030' }}>
@@ -70,6 +91,93 @@ function slaRemaining(deadline?: string): string {
   return h > 0 ? `${h}h ${m}m` : `${m}m`
 }
 
+function stringValue(value: unknown): string | undefined {
+  if (typeof value === 'string' && value.trim()) return value
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value)
+  return undefined
+}
+
+function stringList(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.map((item) => stringValue(item)).filter((item): item is string => Boolean(item))
+  }
+  const single = stringValue(value)
+  return single ? [single] : []
+}
+
+function collectAffectedAssets(caseData: Case): string[] {
+  const assets = new Set<string>()
+
+  caseData.mcp_findings.forEach((finding) => {
+    stringList(finding.fields.affected_hosts).forEach((asset) => assets.add(asset))
+    stringList(finding.fields.hosts).forEach((asset) => assets.add(asset))
+  })
+
+  caseData.mcp_calls.forEach((call) => {
+    stringList(call.result_summary.affected_hosts).forEach((asset) => assets.add(asset))
+    stringList(call.raw_result.affected_hosts).forEach((asset) => assets.add(asset))
+    stringList(call.raw_result.hosts).forEach((asset) => assets.add(asset))
+    const rootCause = stringValue(call.raw_result.root_cause)
+    rootCause?.match(/\b[A-Z]{2,}(?:-[A-Z0-9]+)+\b/g)?.forEach((asset) => assets.add(asset))
+  })
+
+  return Array.from(assets)
+}
+
+function LDAPContextRows({
+  data,
+  onEnrich,
+  loading,
+}: {
+  data?: Record<string, unknown>
+  onEnrich?: () => void
+  loading?: boolean
+}) {
+  if (!data || Object.keys(data).length === 0) {
+    return <LDAPPanel data={data} onEnrich={onEnrich} loading={loading} />
+  }
+
+  const fields = [
+    ['Display name', stringValue(data.display_name)],
+    ['Title', stringValue(data.title)],
+    ['SAM account', stringValue(data.sam_account)],
+    ['Department', stringValue(data.department)],
+    ['Manager', stringValue(data.manager)],
+  ] as const
+  const groups = stringList(data.groups)
+
+  return (
+    <div>
+      {fields.map(([label, value]) =>
+        value ? <EnrichRow key={label} label={label} value={value} /> : null
+      )}
+      {groups.length > 0 && (
+        <div className="pt-2">
+          <div className="mb-1.5 text-[10px]" style={{ color: '#4A6080' }}>
+            Groups
+          </div>
+          <div className="flex flex-wrap gap-1">
+            {groups.map((group) => (
+              <span
+                key={group}
+                className="rounded px-1.5 py-0.5 text-[10px] font-medium"
+                style={{ background: '#1A3A5C', color: '#7AB8F5' }}
+              >
+                {group}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+      {onEnrich && (
+        <MiniButton onClick={onEnrich} disabled={loading}>
+          {loading ? 'Refreshing LDAP...' : 'Refresh LDAP'}
+        </MiniButton>
+      )}
+    </div>
+  )
+}
+
 export function CaseRightPane({
   caseData,
   caseId,
@@ -86,6 +194,11 @@ export function CaseRightPane({
 
   const mitreTactics = caseData.mitre_tactics.join(' / ') || '—'
   const mitreKillChain = caseData.mitre_techniques.join(' → ') || '—'
+  const affectedAssets = collectAffectedAssets(caseData)
+  const principal =
+    stringValue(caseData.ldap_context?.user_principal_name) ??
+    stringValue(caseData.ldap_context?.sam_account) ??
+    stringValue(caseData.ldap_context?.display_name)
 
   return (
     <aside
@@ -103,11 +216,12 @@ export function CaseRightPane({
         <div className="grid grid-cols-2 gap-1.5 mb-3">
           <StatCard label="Alerts linked" value={caseData.timeline.length} />
           <StatCard label="IOCs" value={caseData.iocs.length} />
-          <StatCard label="Assets affected" value="—" />
+          <StatCard label="Assets affected" value={affectedAssets.length || '—'} />
           <StatCard label="Hours open" value={hoursOpen(caseData.created_at)} />
         </div>
 
         {/* MITRE / Kill chain / SLA rows */}
+        {principal && <EnrichRow label="Principal" value={principal} />}
         <EnrichRow label="MITRE Tactic" value={mitreTactics} />
         <EnrichRow label="Kill chain" value={mitreKillChain} />
         <EnrichRow
@@ -139,6 +253,19 @@ export function CaseRightPane({
             </div>
           </div>
         )}
+        {affectedAssets.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1">
+            {affectedAssets.slice(0, 4).map((asset) => (
+              <span
+                key={asset}
+                className="rounded px-1.5 py-0.5 text-[10px] font-medium"
+                style={{ background: '#2B2118', color: '#F0B35D' }}
+              >
+                {asset}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* LDAP enrichment */}
@@ -148,7 +275,7 @@ export function CaseRightPane({
           className="rounded border p-2.5"
           style={{ background: '#162030', borderColor: '#1E3048' }}
         >
-          <LDAPPanel
+          <LDAPContextRows
             data={caseData.ldap_context}
             onEnrich={() => enrichLDAP.mutate()}
             loading={enrichLDAP.isPending}

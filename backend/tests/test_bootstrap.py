@@ -44,3 +44,18 @@ async def test_ensure_demo_data_seeds_cases_and_playbooks(test_db) -> None:
 
     assert second_run == {"users": 0, "cases": 0, "playbooks": 0}
     assert await test_db.cases.count_documents({}) == created["cases"]
+
+
+@pytest.mark.asyncio
+async def test_demo_case_contains_redesign_seed_fields(test_db) -> None:
+    from app.db.bootstrap import ensure_demo_data
+
+    await ensure_demo_data(test_db, True)
+    case = await test_db.cases.find_one({"case_number": "CASE-2024-0847"})
+
+    assert case is not None
+    assert case["assigned_to"] == "analyst.kim@corp.local"
+    assert case["ldap_context"]["sam_account"] == "jdoe"
+    assert len(case["mcp_calls"]) >= 3
+    assert len(case["mcp_findings"]) >= 3
+    assert len(case["console_history"]) >= 2

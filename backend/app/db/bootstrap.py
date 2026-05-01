@@ -105,6 +105,12 @@ def _load_seed_docs(filename: str) -> list[dict]:
     return json.loads((SEED_DIR / filename).read_text())
 
 
+def _parse_datetime(value):
+    if isinstance(value, str):
+        return datetime.fromisoformat(value.replace("Z", "+00:00"))
+    return value
+
+
 def _prepare_case_doc(case: dict) -> dict:
     now = datetime.now(timezone.utc)
     prepared = dict(case)
@@ -113,9 +119,13 @@ def _prepare_case_doc(case: dict) -> dict:
     prepared.setdefault("created_by", "system")
 
     for event in prepared.get("timeline", []):
-        if isinstance(event.get("timestamp"), str):
-            event["timestamp"] = datetime.fromisoformat(
-                event["timestamp"].replace("Z", "+00:00")
-            )
+        event["timestamp"] = _parse_datetime(event.get("timestamp"))
+
+    for field in ("created_at", "updated_at", "sla_deadline"):
+        prepared[field] = _parse_datetime(prepared.get(field))
+
+    for field in ("mcp_calls", "mcp_findings", "console_history"):
+        for item in prepared.get(field, []):
+            item["created_at"] = _parse_datetime(item.get("created_at"))
 
     return prepared

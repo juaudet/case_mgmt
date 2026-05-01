@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.v1 import auth, cases, console, enrichment, playbooks
+from app.api.v1 import auth, cases, console, enrichment, mcp, playbooks
 from app.core.config import settings
 from app.db.mongo import connect_mongo, disconnect_mongo, get_database
 from app.db.redis import connect_redis, disconnect_redis, get_redis_client
@@ -36,6 +36,7 @@ app.include_router(auth.router, prefix="/api/v1", tags=["auth"])
 app.include_router(cases.router, prefix="/api/v1", tags=["cases"])
 app.include_router(playbooks.router, prefix="/api/v1", tags=["playbooks"])
 app.include_router(enrichment.router, prefix="/api/v1", tags=["enrichment"])
+app.include_router(mcp.router, prefix="/api/v1", tags=["mcp"])
 app.include_router(console.router, prefix="/api/v1", tags=["console"])
 
 

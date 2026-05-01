@@ -32,6 +32,39 @@ class IOCRef(BaseModel):
     label: str | None = None
 
 
+class MCPCallRecord(BaseModel):
+    id: str
+    provider: str
+    tool_name: str
+    params: dict
+    status: str
+    duration_ms: int | None = None
+    result_summary: dict = {}
+    raw_result: dict = {}
+    created_at: datetime
+    actor: str
+
+
+class MCPFinding(BaseModel):
+    id: str
+    source: str
+    title: str
+    severity: str
+    fields: dict
+    created_at: datetime
+
+
+class ConsoleHistoryTurn(BaseModel):
+    id: str
+    prompt: str
+    response: str
+    template: str | None = None
+    context_flags: dict = {}
+    sources_used: list[str] = []
+    created_at: datetime
+    actor: str
+
+
 class CaseBase(BaseModel):
     title: str
     description: str
@@ -66,6 +99,9 @@ class Case(CaseBase):
     created_by: str
     timeline: list[TimelineEvent] = []
     iocs: list[IOCRef] = []
+    mcp_calls: list[MCPCallRecord] = []
+    mcp_findings: list[MCPFinding] = []
+    console_history: list[ConsoleHistoryTurn] = []
     sla_deadline: datetime | None = None
     ldap_context: dict | None = None
     vt_results: dict | None = None

@@ -144,6 +144,20 @@ Included mock scenarios:
 
 ---
 
+## VirusTotal Live Mode
+
+Local Docker Compose runs with `DEMO_MODE=true` by default, so MCP tools use deterministic mock responses.
+
+To enable live VirusTotal calls for the MCP service:
+
+1. Create `.secrets/vt_api_key` containing your VirusTotal API key.
+2. Set the MCP service `DEMO_MODE` to `false` in `docker-compose.yml` or an override file.
+3. Restart the stack with `docker compose up --build`.
+
+Never commit `.secrets/` or API keys. The repository `.gitignore` excludes `.secrets/`.
+
+---
+
 ## Environment Variables Reference
 
 ### Backend
