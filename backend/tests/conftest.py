@@ -1,7 +1,14 @@
+import os
+
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from motor.motor_asyncio import AsyncIOMotorClient
+
+os.environ.setdefault(
+    "JWT_SECRET_KEY",
+    "pytest-jwt-secret-do-not-use-in-production-32+",
+)
 
 from app.core.security import hash_password
 from app.main import app
