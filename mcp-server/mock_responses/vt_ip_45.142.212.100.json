@@ -1,0 +1,19 @@
+{
+  "data": {
+    "id": "45.142.212.100",
+    "type": "ip_address",
+    "attributes": {
+      "reputation": -74,
+      "network": "45.142.212.0/24",
+      "country": "NL",
+      "asn": 204428,
+      "as_owner": "SS-Net",
+      "last_analysis_stats": {
+        "malicious": 38, "suspicious": 5, "undetected": 10, "harmless": 2
+      },
+      "tags": ["cobalt-strike", "c2", "beacon"],
+      "total_votes": {"harmless": 1, "malicious": 47}
+    }
+  },
+  "meta": {"score": 74, "label": "Cobalt Strike C2", "demo": true}
+}

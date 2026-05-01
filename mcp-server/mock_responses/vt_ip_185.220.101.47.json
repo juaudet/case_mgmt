@@ -1,0 +1,20 @@
+{
+  "data": {
+    "id": "185.220.101.47",
+    "type": "ip_address",
+    "attributes": {
+      "reputation": -92,
+      "network": "185.220.101.0/24",
+      "country": "DE",
+      "asn": 62220,
+      "as_owner": "Tor Exit Relay",
+      "last_analysis_stats": {
+        "malicious": 52, "suspicious": 3, "undetected": 5, "harmless": 5
+      },
+      "last_analysis_date": 1731600000,
+      "tags": ["tor-exit-node", "brute-force", "credential-stuffing"],
+      "total_votes": {"harmless": 2, "malicious": 89}
+    }
+  },
+  "meta": {"score": 92, "label": "Tor exit node / malicious C2", "demo": true}
+}

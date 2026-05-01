@@ -1,0 +1,19 @@
+{
+  "resources": [{
+    "device_id": "abc123def456",
+    "hostname": "WKST-MW-007",
+    "platform_name": "Windows",
+    "os_version": "Windows 10 22H2",
+    "sensor_version": "7.10.16303.0",
+    "mac_address": "00:50:56:a1:b2:c3",
+    "local_ip": "10.0.5.42",
+    "external_ip": "203.0.113.55",
+    "last_seen": "2024-11-17T14:35:00Z",
+    "status": "normal",
+    "containment_status": "normal",
+    "prevention_policy_applied_date": "2024-01-15T00:00:00Z",
+    "groups": ["Workstations", "Middleware-Team"],
+    "ou": "OU=Middleware,OU=Workstations,DC=corp,DC=local"
+  }],
+  "meta": {"demo": true}
+}

@@ -1,0 +1,22 @@
+{
+  "data": {
+    "id": "corp-mail-auth.ru",
+    "type": "domain",
+    "attributes": {
+      "reputation": -88,
+      "registrar": "Namecheap Inc.",
+      "creation_date": 1699920000,
+      "categories": {"Forcepoint ThreatSeeker": "phishing", "BitDefender": "phishing"},
+      "last_analysis_stats": {
+        "malicious": 47, "suspicious": 6, "undetected": 3, "harmless": 0
+      },
+      "last_dns_records": [
+        {"type": "A", "value": "185.220.101.47"},
+        {"type": "MX", "value": "mail.corp-mail-auth.ru"}
+      ],
+      "tags": ["phishing", "evilproxy", "credential-harvesting"],
+      "tls_certificate": {"issuer": {"O": "Let's Encrypt"}}
+    }
+  },
+  "meta": {"score": 88, "label": "EvilProxy phishing domain", "demo": true}
+}

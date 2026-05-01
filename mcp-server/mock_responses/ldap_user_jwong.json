@@ -1,0 +1,22 @@
+{
+  "username": "jwong",
+  "display_name": "Jessica Wong",
+  "email": "j.wong@corp.local",
+  "title": "Senior Finance Analyst",
+  "department": "Finance",
+  "ou": "OU=Finance,OU=Users,DC=corp,DC=local",
+  "groups": [
+    "CN=Finance-Users,OU=Groups,DC=corp,DC=local",
+    "CN=SharePoint-Finance,OU=Groups,DC=corp,DC=local",
+    "CN=VPN-Users,OU=Groups,DC=corp,DC=local"
+  ],
+  "manager": "CN=Bob Chen,OU=Finance,OU=Users,DC=corp,DC=local",
+  "mfa_enabled": true,
+  "mfa_method": "Microsoft Authenticator",
+  "account_enabled": true,
+  "password_last_set": "2024-09-12T00:00:00Z",
+  "last_logon": "2024-11-15T08:21:00Z",
+  "privileged": false,
+  "admin_groups": [],
+  "meta": {"demo": true}
+}
