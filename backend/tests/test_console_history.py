@@ -42,7 +42,7 @@ async def test_console_prompt_persists_response(
     async def fake_response(prompt_text: str, system_prompt: str) -> str:
         return "Initial access was likely spearphishing with high confidence."
 
-    monkeypatch.setattr("app.api.v1.console.generate_console_response", fake_response)
+    monkeypatch.setattr("app.console.router.generate_console_response", fake_response)
 
     resp = await async_client.post(
         f"/api/v1/cases/{case_id}/console/prompt",
