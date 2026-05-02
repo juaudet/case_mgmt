@@ -27,13 +27,13 @@ const DEFAULT_CONTEXT_FLAGS: ContextFlags = {
 
 const MODES = ['Free-form', 'Structured', 'Chain-of-thought']
 
-export function AnalystConsole({ caseId }: { caseId: string }) {
+export function AnalystConsole({ caseId }: { caseId: string | null }) {
   const [prompt, setPrompt] = useState('')
   const [template, setTemplate] = useState('')
   const [mode, setMode] = useState(MODES[0])
   const [contextFlags, setContextFlags] = useState<ContextFlags>(DEFAULT_CONTEXT_FLAGS)
-  const consoleHistory = useConsoleHistory(caseId)
-  const submitPrompt = useSubmitConsolePrompt(caseId)
+  const consoleHistory = useConsoleHistory(caseId ?? '')
+  const submitPrompt = useSubmitConsolePrompt(caseId ?? '')
   const turns = consoleHistory.data?.history ?? []
   const activeContextLabels = (Object.keys(contextFlags) as Array<keyof ContextFlags>)
     .filter((key) => contextFlags[key])
