@@ -1,6 +1,7 @@
 'use client'
 import { useRef, useEffect } from 'react'
 import { useCase } from '@/lib/api'
+import { orchestrateCaseLoad } from '@/lib/animations'
 import { IOCCard } from './IOCCard'
 import { Timeline } from '@/components/cases/Timeline'
 import { CaseTabbedContent } from '@/components/cases/CaseTabbedContent'
@@ -30,7 +31,7 @@ export function CaseOverview({ caseId }: { caseId: string }) {
   // anime.js orchestration hooked up in Task 12
   useEffect(() => {
     if (!c) return
-    // orchestrateCase(headerRef.current, iocGridRef.current) — wired in Task 12
+    orchestrateCaseLoad(headerRef.current, iocGridRef.current)
   }, [c?.id])
 
   if (isLoading || !c) {
@@ -55,7 +56,7 @@ export function CaseOverview({ caseId }: { caseId: string }) {
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       {/* Header strip */}
-      <div ref={headerRef} className="flex-shrink-0 bg-panel border-b border-subtle px-4 py-2">
+      <div ref={headerRef} className="flex-shrink-0 bg-panel border-b border-subtle px-4 py-2" style={{ willChange: 'transform, opacity' }}>
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-2">
             <span className="font-mono text-[11px] font-semibold text-primary">{c.case_number}</span>
@@ -91,7 +92,7 @@ export function CaseOverview({ caseId }: { caseId: string }) {
           {c.iocs.length > 0 && (
             <div className="flex-shrink-0 border-b border-subtle px-3 py-2">
               <p className="font-mono text-[9px] text-accent-blue tracking-widest mb-2">IOC ANALYSIS</p>
-              <div ref={iocGridRef} className="grid grid-cols-2 gap-2">
+              <div ref={iocGridRef} className="grid grid-cols-2 gap-2" style={{ willChange: 'transform, opacity' }}>
                 {c.iocs.map((ioc) => (
                   <IOCCard key={`${ioc.type}-${ioc.value}`} ioc={ioc} />
                 ))}
