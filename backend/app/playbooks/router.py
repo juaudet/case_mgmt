@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 
+from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from pydantic import BaseModel
@@ -44,8 +45,6 @@ async def start_playbook(
     current_user: UserInDB = Depends(get_current_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> PlaybookExecutionState:
-    from bson import ObjectId
-
     playbook_doc = await db.playbooks.find_one({"id": body.playbook_id})
     if not playbook_doc:
         raise HTTPException(status_code=404, detail="Playbook not found")
@@ -89,8 +88,6 @@ async def get_playbook_state(
     current_user: UserInDB = Depends(get_current_user),
     db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> PlaybookExecutionState:
-    from bson import ObjectId
-
     doc = await db.cases.find_one({"_id": ObjectId(case_id)})
     if not doc:
         raise HTTPException(status_code=404, detail="Case not found")

@@ -1,7 +1,7 @@
 import pytest
 
-from app.models.playbook import Branch
-from app.services.playbook_engine import evaluate_branch
+from app.playbooks.models import Branch
+from app.playbooks.engine import evaluate_branch
 
 
 def _make_branch(when: str, goto: str, label: str = "test") -> Branch:
