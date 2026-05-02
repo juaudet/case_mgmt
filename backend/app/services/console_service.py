@@ -1,4 +1,4 @@
-from app.models.case import Case
+from app.cases.models import Case
 
 
 def build_system_prompt(case: Case, flags: dict) -> str:
@@ -21,8 +21,10 @@ def build_system_prompt(case: Case, flags: dict) -> str:
         blocks.append("IOCs:\n" + "\n".join(ioc_lines))
     if flags.get("virustotal") and case.vt_results:
         blocks.append(f"VT RESULTS:\n{case.vt_results}")
-    if flags.get("crowdstrike") and case.cs_results:
-        blocks.append(f"CS TELEMETRY:\n{case.cs_results}")
+    if flags.get("mcp_findings") and case.mcp_findings:
+        blocks.append(f"MCP FINDINGS (Tines-backed):\n{case.mcp_findings}")
+    if flags.get("abuseipdb") and case.abuseipdb_results:
+        blocks.append(f"ABUSEIPDB:\n{case.abuseipdb_results}")
     if flags.get("playbook_state") and case.playbook_state:
         blocks.append(f"PLAYBOOK STATE:\n{case.playbook_state}")
     return "\n\n".join(blocks)

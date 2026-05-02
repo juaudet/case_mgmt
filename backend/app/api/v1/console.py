@@ -12,7 +12,7 @@ from pydantic import BaseModel
 from app.core.deps import get_current_user, get_db
 from app.core.secrets import read_env_or_secret_file
 from app.auth.models import UserInDB
-from app.services.case_service import get_case
+from app.cases.service import get_case
 from app.services.console_service import build_system_prompt
 
 router = APIRouter()

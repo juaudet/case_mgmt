@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from app.models.case import CaseCreate, CaseStatus, IOCRef, Severity
+from app.cases.models import CaseCreate, CaseStatus, IOCRef, Severity
 
 
 def parse_provider_incident(provider: str, payload: dict) -> tuple[CaseCreate, list[IOCRef]]:

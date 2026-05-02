@@ -2,11 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from pydantic import BaseModel
 
-from app.core.deps import get_current_user, get_db, require_role
-from app.models.case import Case, CaseCreate, CaseListItem, CaseUpdate, IOCRef, TimelineEvent
 from app.auth.models import Role, UserInDB
-from app.services import case_service
-from app.services.source_parsers import parse_provider_incident
+from app.cases.models import Case, CaseCreate, CaseListItem, CaseUpdate, IOCRef, TimelineEvent
+from app.cases import service as case_service
+from app.cases.parsers import parse_provider_incident
+from app.core.deps import get_current_user, get_db, require_role
 
 router = APIRouter()
 

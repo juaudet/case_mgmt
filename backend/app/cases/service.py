@@ -3,7 +3,21 @@ from datetime import datetime, timezone
 from bson import ObjectId
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
-from app.models.case import Case, CaseCreate, CaseListItem, CaseUpdate, IOCRef, TimelineEvent
+from app.cases.models import Case, CaseCreate, CaseListItem, CaseUpdate, IOCRef, TimelineEvent
+
+
+def _normalize_assigned_to(value: object) -> str | None:
+    """Coerce legacy or bad stored values (e.g. []) to str | None for API models."""
+    if value is None:
+        return None
+    if isinstance(value, str):
+        return value or None
+    if isinstance(value, list):
+        if not value:
+            return None
+        first = value[0]
+        return str(first) if first is not None else None
+    return str(value)
 
 
 async def get_next_case_number(db: AsyncIOMotorDatabase) -> str:
@@ -15,8 +29,10 @@ async def get_next_case_number(db: AsyncIOMotorDatabase) -> str:
 async def create_case(db: AsyncIOMotorDatabase, data: CaseCreate, created_by: str) -> Case:
     case_number = await get_next_case_number(db)
     now = datetime.now(timezone.utc)
+    payload = data.model_dump()
+    initial_iocs = payload.pop("iocs", [])
     doc = {
-        **data.model_dump(),
+        **payload,
         "case_number": case_number,
         "year": now.year,
         "created_at": now,
@@ -30,7 +46,7 @@ async def create_case(db: AsyncIOMotorDatabase, data: CaseCreate, created_by: st
                 "detail": "Case created",
             }
         ],
-        "iocs": [],
+        "iocs": initial_iocs,
         "mcp_calls": [],
         "mcp_findings": [],
         "console_history": [],
@@ -167,6 +183,8 @@ def _doc_to_case(doc: dict) -> Case:
     doc = dict(doc)
     doc["id"] = str(doc.pop("_id", doc.get("id", "")))
     doc.pop("year", None)
+    if "assigned_to" in doc:
+        doc["assigned_to"] = _normalize_assigned_to(doc["assigned_to"])
     return Case(**doc)
 
 
@@ -177,7 +195,7 @@ def _doc_to_list_item(doc: dict) -> CaseListItem:
         title=doc["title"],
         severity=doc["severity"],
         status=doc["status"],
-        assigned_to=doc.get("assigned_to"),
+        assigned_to=_normalize_assigned_to(doc.get("assigned_to")),
         created_at=doc["created_at"],
         updated_at=doc["updated_at"],
         ioc_count=len(doc.get("iocs", [])),

@@ -1,7 +1,7 @@
 from datetime import datetime
 from enum import Enum
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class Severity(str, Enum):
@@ -18,11 +18,17 @@ class CaseStatus(str, Enum):
     false_positive = "false_positive"
 
 
-class TimelineEvent(BaseModel):
-    timestamp: datetime
-    actor: str
-    action: str
-    detail: str
+class IOCType(str, Enum):
+    ipv4 = "ipv4"
+    sha256 = "sha256"
+    domain = "domain"
+    url = "url"
+    email = "email"
+
+
+class IOCCreate(BaseModel):
+    type: IOCType
+    value: str
 
 
 class IOCRef(BaseModel):
@@ -30,6 +36,25 @@ class IOCRef(BaseModel):
     value: str
     score: int | None = None
     label: str | None = None
+
+
+class IOC(BaseModel):
+    id: str
+    case_id: str
+    type: IOCType
+    value: str
+    score: int | None = None
+    label: str | None = None
+    vt_data: dict | None = None
+    created_at: datetime
+    enriched_at: datetime | None = None
+
+
+class TimelineEvent(BaseModel):
+    timestamp: datetime
+    actor: str
+    action: str
+    detail: str
 
 
 class MCPCallRecord(BaseModel):
@@ -77,7 +102,7 @@ class CaseBase(BaseModel):
 
 
 class CaseCreate(CaseBase):
-    pass
+    iocs: list[IOCRef] = Field(default_factory=list)
 
 
 class CaseUpdate(BaseModel):
@@ -105,8 +130,7 @@ class Case(CaseBase):
     sla_deadline: datetime | None = None
     ldap_context: dict | None = None
     vt_results: dict | None = None
-    cs_results: dict | None = None
-    otx_results: dict | None = None
+    abuseipdb_results: dict | None = None
     playbook_id: str | None = None
     playbook_state: dict | None = None
     parent_case_id: str | None = None
