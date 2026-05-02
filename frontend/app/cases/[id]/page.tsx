@@ -1,10 +1,5 @@
 import { redirect } from 'next/navigation'
 
-export default async function CaseDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>
-}) {
-  const { id } = await params
-  redirect(`/dashboard?case=${id}`)
+export default function CaseDetailPage({ params }: { params: { id: string } }) {
+  redirect(`/dashboard?case=${params.id}`)
 }
