@@ -9,11 +9,11 @@ from fastapi.responses import StreamingResponse
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from pydantic import BaseModel
 
-from app.core.deps import get_current_user, get_db
-from app.core.secrets import read_env_or_secret_file
 from app.auth.models import UserInDB
 from app.cases.service import get_case
-from app.services.console_service import build_system_prompt
+from app.console.service import build_system_prompt
+from app.core.deps import get_current_user, get_db
+from app.core.secrets import read_env_or_secret_file
 
 router = APIRouter()
 
