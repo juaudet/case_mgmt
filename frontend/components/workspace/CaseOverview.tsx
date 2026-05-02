@@ -92,8 +92,8 @@ export function CaseOverview({ caseId }: { caseId: string }) {
             <div className="flex-shrink-0 border-b border-subtle px-3 py-2">
               <p className="font-mono text-[9px] text-accent-blue tracking-widest mb-2">IOC ANALYSIS</p>
               <div ref={iocGridRef} className="grid grid-cols-2 gap-2">
-                {c.iocs.map((ioc, i) => (
-                  <IOCCard key={`${ioc.value}-${i}`} ioc={ioc} />
+                {c.iocs.map((ioc) => (
+                  <IOCCard key={`${ioc.type}-${ioc.value}`} ioc={ioc} />
                 ))}
               </div>
             </div>
@@ -104,6 +104,7 @@ export function CaseOverview({ caseId }: { caseId: string }) {
         </div>
 
         {/* Right: timeline strip */}
+        {/* TODO Task 8: Timeline tab removed when CaseTabbedContent is restyled — currently Timeline renders twice (right strip + CaseTabbedContent default tab) */}
         <div className="w-[160px] flex-shrink-0 border-l border-subtle bg-panel flex flex-col overflow-hidden">
           <p className="font-mono text-[9px] text-accent-blue tracking-widest px-2 pt-2 pb-1 flex-shrink-0">
             TIMELINE

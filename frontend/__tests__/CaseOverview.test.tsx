@@ -3,15 +3,17 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { CaseOverview } from '@/components/workspace/CaseOverview'
 import type { Case } from '@/types'
 
-const mockCase: Partial<Case> = {
+const mockCase: Case = {
   id: 'case-1',
   case_number: 'CASE-001',
   title: 'Lateral Movement',
+  description: 'Suspicious lateral movement detected across internal hosts.',
   severity: 'critical',
   status: 'in_progress',
   assigned_to: 'analyst.kim@corp.local',
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
+  created_by: 'system',
   iocs: [{ type: 'ipv4', value: '185.220.101.47', score: 89 }],
   timeline: [{ timestamp: new Date().toISOString(), actor: 'system', action: 'ALERT_CREATED', detail: 'Alert triggered' }],
   mitre_tactics: [],
