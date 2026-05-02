@@ -9,12 +9,17 @@ const config: Config = {
         base:     '#0d1117',
         panel:    '#161b22',
         elevated: '#21262d',
-        subtle:   '#21262d',
+        subtle:   '#30363d',
         primary:  '#f0f6fc',
         muted:    '#8b949e',
         dim:      '#6e7681',
         'accent-blue':  '#58a6ff',
         'accent-green': '#238636',
+        ioc: {
+          malicious:  { bg: '#1a0505', border: '#490202' },
+          suspicious: { bg: '#1a0e00', border: '#4a2500' },
+          clean:      { bg: '#0d1a10', border: '#1a3a20' },
+        },
         severity: {
           critical: '#f85149',
           high:     '#f0883e',
