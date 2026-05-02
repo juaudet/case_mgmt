@@ -38,8 +38,8 @@ describe('CaseCard', () => {
     render(<CaseCard case={mockCase} />)
     expect(screen.getByText('3 IOCs')).toBeInTheDocument()
   })
-  it('links to case detail page', () => {
+  it('links to workspace with case param', () => {
     render(<CaseCard case={mockCase} />)
-    expect(screen.getByRole('link')).toHaveAttribute('href', '/cases/abc123')
+    expect(screen.getByRole('link')).toHaveAttribute('href', '/dashboard?case=abc123')
   })
 })
