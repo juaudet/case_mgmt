@@ -5,9 +5,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from pydantic import BaseModel
 
-from app.core.deps import get_current_user, get_db
 from app.auth.models import UserInDB
-from app.services.enrichment_service import enrich_ioc
+from app.core.deps import get_current_user, get_db
+from app.enrichment.service import enrich_ioc
 
 router = APIRouter()
 

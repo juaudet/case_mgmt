@@ -8,8 +8,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.auth import router as auth_router
 from app.cases import router as cases_router
+from app.enrichment import router as enrichment_router
 from app.playbooks import router as playbooks_router
-from app.api.v1 import console, enrichment, mcp
+from app.api.v1 import console, mcp
 from app.core.config import settings
 from app.db.mongo import connect_mongo, disconnect_mongo, get_database
 from app.db.redis import connect_redis, disconnect_redis, get_redis_client
@@ -54,7 +55,7 @@ app.add_middleware(
 app.include_router(auth_router.router, prefix="/api/v1", tags=["auth"])
 app.include_router(cases_router.router, prefix="/api/v1", tags=["cases"])
 app.include_router(playbooks_router.router, prefix="/api/v1", tags=["playbooks"])
-app.include_router(enrichment.router, prefix="/api/v1", tags=["enrichment"])
+app.include_router(enrichment_router.router, prefix="/api/v1", tags=["enrichment"])
 app.include_router(mcp.router, prefix="/api/v1", tags=["mcp"])
 app.include_router(console.router, prefix="/api/v1", tags=["console"])
 

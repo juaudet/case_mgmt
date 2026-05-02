@@ -7,27 +7,22 @@ from bson.errors import InvalidId
 from fastapi import HTTPException
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
-from app.services.enrichment_service import call_mcp_tool
+from app.enrichment.service import call_mcp_tool
 
 ALLOWED_TOOLS: dict[str, str] = {
     "vt_ip_report": "VirusTotal",
     "vt_hash_lookup": "VirusTotal",
     "vt_domain_scan": "VirusTotal",
-    "cs_ioc_search": "CrowdStrike",
-    "cs_host_details": "CrowdStrike",
-    "cs_process_tree": "CrowdStrike",
-    "otx_indicator": "AlienVault OTX",
-    "ldap_user_lookup": "LDAP",
+    "abuseipdb_check_ip": "AbuseIPDB",
+    "abuseipdb_ip_reports": "AbuseIPDB",
 }
 
 REQUIRED_PARAMS: dict[str, tuple[str, ...]] = {
     "vt_ip_report": ("ip",),
     "vt_hash_lookup": ("hash",),
     "vt_domain_scan": ("domain",),
-    "cs_host_details": ("device_id",),
-    "cs_process_tree": ("device_id", "hash", "timestamp"),
-    "otx_indicator": ("indicator",),
-    "ldap_user_lookup": ("username",),
+    "abuseipdb_check_ip": ("ip",),
+    "abuseipdb_ip_reports": ("ip",),
 }
 
 VT_FINDING_TITLES: dict[str, str] = {
@@ -75,14 +70,6 @@ async def updated_mcp_state(db: AsyncIOMotorDatabase, case_id: str) -> dict:
 
 
 def validate_tool_params(tool_name: str, params: dict) -> None:
-    if tool_name == "cs_ioc_search":
-        if not any(params.get(key) for key in ("indicator", "sha256", "hash")):
-            raise HTTPException(
-                status_code=422,
-                detail="Missing required MCP params: one of indicator, sha256, hash",
-            )
-        return
-
     missing = [key for key in REQUIRED_PARAMS.get(tool_name, ()) if not params.get(key)]
     if missing:
         raise HTTPException(
@@ -153,6 +140,13 @@ async def run_case_tool(
 def summarize_result(tool_name: str, raw_result: dict) -> dict:
     if "error" in raw_result:
         return {"error": raw_result["error"]}
+    if tool_name == "abuseipdb_check_ip":
+        score = (
+            raw_result.get("data", {}).get("abuseConfidenceScore")
+            or raw_result.get("abuseConfidenceScore")
+            or 0
+        )
+        return {"abuse_confidence_score": score}
     if tool_name.startswith("vt_"):
         stats = (
             raw_result.get("data", {})
@@ -162,12 +156,6 @@ def summarize_result(tool_name: str, raw_result: dict) -> dict:
         return {
             "malicious": stats.get("malicious", 0),
             "suspicious": stats.get("suspicious", 0),
-        }
-    if tool_name == "cs_ioc_search":
-        return {
-            "hosts_scanned": raw_result.get("hosts_scanned", 0),
-            "hash_detections": raw_result.get("hash_detections", 0),
-            "suspicious_activity": raw_result.get("suspicious_activity", 0),
         }
     return {"status": "ready"}
 
@@ -189,14 +177,21 @@ def normalize_findings(tool_name: str, raw_result: dict, created_at: datetime) -
                 "created_at": created_at,
             }
         ]
-    if tool_name == "cs_ioc_search":
+    if tool_name == "abuseipdb_check_ip":
+        score = (
+            raw_result.get("data", {}).get("abuseConfidenceScore")
+            or raw_result.get("abuseConfidenceScore")
+            or 0
+        )
+        if score < 25:
+            return []
         return [
             {
                 "id": str(uuid4()),
-                "source": "CrowdStrike",
-                "title": "IOC hunt completed",
-                "severity": "critical",
-                "fields": summarize_result(tool_name, raw_result),
+                "source": "AbuseIPDB",
+                "title": "IP flagged by AbuseIPDB",
+                "severity": "critical" if score >= 75 else "medium",
+                "fields": {"abuse_confidence_score": score},
                 "created_at": created_at,
             }
         ]
