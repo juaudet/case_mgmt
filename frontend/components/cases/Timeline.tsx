@@ -27,7 +27,7 @@ function formatTs(ts: string): string {
   }
 }
 
-export function Timeline({ events }: { events: TimelineEvent[] }) {
+export function Timeline({ events, compact = false }: { events: TimelineEvent[]; compact?: boolean }) {
   const sorted = [...events].sort(
     (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
   )
@@ -53,14 +53,18 @@ export function Timeline({ events }: { events: TimelineEvent[] }) {
       {sorted.map((event, i) => {
         const color = dotColor(event.action)
         const dot = DOT_STYLES[color]
+        const isCriticalAction = /alert|critical|lateral|credential|dump/i.test(event.action)
         return (
           <li key={i} className="flex gap-3.5 pb-3.5 relative">
             {/* Dot */}
             <div
-              className="shrink-0 rounded-full border-2 z-10 mt-0.5"
+              className={[
+                'shrink-0 rounded-full border-2 z-10 mt-0.5',
+                isCriticalAction ? 'animate-dot-pulse' : '',
+              ].join(' ')}
               style={{
-                width: 13,
-                height: 13,
+                width: compact ? 8 : 13,
+                height: compact ? 8 : 13,
                 borderColor: dot.border,
                 background: dot.background,
               }}
@@ -74,7 +78,7 @@ export function Timeline({ events }: { events: TimelineEvent[] }) {
               >
                 {event.action.replace(/_/g, ' ')}
               </div>
-              {event.detail && (
+              {!compact && event.detail && (
                 <div
                   className="text-[11px] leading-relaxed mb-0.5"
                   style={{ color: '#4A6080' }}
@@ -87,7 +91,7 @@ export function Timeline({ events }: { events: TimelineEvent[] }) {
                 style={{ color: '#4A6080' }}
               >
                 {formatTs(event.timestamp)}
-                {event.actor && (
+                {!compact && event.actor && (
                   <span>
                     {' '}
                     &nbsp;·&nbsp; {event.actor}
