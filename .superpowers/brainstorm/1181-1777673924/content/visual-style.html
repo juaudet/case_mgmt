@@ -1,0 +1,175 @@
+<h2>Visual Style Direction</h2>
+<p class="subtitle">Same three-column layout — different tone. Which feels like a tool you'd trust in a real SOC?</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="display:flex;height:170px;gap:3px;background:#0d1117;border-radius:6px;padding:8px;font-family:monospace">
+        <!-- Left col -->
+        <div style="width:22%;background:#161b22;border-radius:4px;padding:6px;border:1px solid #21262d">
+          <div style="font-size:8px;color:#58a6ff;margin-bottom:6px;letter-spacing:1px">CASE QUEUE</div>
+          <div style="background:#21262d;border-radius:3px;padding:4px 6px;margin-bottom:3px;border-left:2px solid #f85149">
+            <div style="font-size:8px;color:#f0f6fc">CASE-1042</div>
+            <div style="font-size:7px;color:#8b949e">CRITICAL · 2m ago</div>
+          </div>
+          <div style="background:#161b22;border-radius:3px;padding:4px 6px;margin-bottom:3px;border-left:2px solid #f0883e">
+            <div style="font-size:8px;color:#8b949e">CASE-1041</div>
+            <div style="font-size:7px;color:#6e7681">HIGH · 14m ago</div>
+          </div>
+          <div style="background:#161b22;border-radius:3px;padding:4px 6px;border-left:2px solid #3fb950">
+            <div style="font-size:8px;color:#8b949e">CASE-1040</div>
+            <div style="font-size:7px;color:#6e7681">MEDIUM · 1h ago</div>
+          </div>
+        </div>
+        <!-- Center col -->
+        <div style="flex:1;background:#161b22;border-radius:4px;padding:6px;border:1px solid #21262d">
+          <div style="font-size:8px;color:#58a6ff;margin-bottom:4px;letter-spacing:1px">CASE DETAIL</div>
+          <div style="background:#0d1117;border-radius:3px;padding:4px;margin-bottom:3px">
+            <div style="font-size:8px;color:#f0f6fc">Lateral movement · 3 hosts compromised</div>
+          </div>
+          <div style="display:flex;gap:3px;margin-bottom:3px">
+            <div style="background:#21262d;border-radius:3px;padding:3px 6px;font-size:7px;color:#58a6ff">Timeline</div>
+            <div style="background:#238636;border-radius:3px;padding:3px 6px;font-size:7px;color:#fff">IOC</div>
+            <div style="background:#21262d;border-radius:3px;padding:3px 6px;font-size:7px;color:#8b949e">Playbook</div>
+          </div>
+          <div style="background:#0d1117;border-radius:3px;padding:4px">
+            <div style="font-size:7px;color:#3fb950">● 09:14 Auth failure svc_backup</div>
+            <div style="font-size:7px;color:#f85149">● 09:16 Lateral move to DC01</div>
+            <div style="font-size:7px;color:#f85149">● 09:18 Credential dump attempt</div>
+          </div>
+        </div>
+        <!-- Right col -->
+        <div style="width:30%;background:#161b22;border-radius:4px;padding:6px;border:1px solid #21262d">
+          <div style="font-size:8px;color:#58a6ff;margin-bottom:4px;letter-spacing:1px">AI CONSOLE</div>
+          <div style="background:#0d1117;border-radius:3px;padding:4px;margin-bottom:4px;flex:1">
+            <div style="font-size:7px;color:#8b949e">› Summarize this case</div>
+            <div style="font-size:7px;color:#3fb950;margin-top:3px">Likely APT lateral movement via compromised service account. Recommend isolation of DC01.</div>
+          </div>
+          <div style="background:#21262d;border-radius:3px;padding:3px;display:flex;gap:2px">
+            <div style="flex:1;background:#0d1117;border-radius:2px;padding:3px;font-size:7px;color:#6e7681">Ask anything...</div>
+            <div style="background:#238636;border-radius:2px;padding:3px 5px;font-size:7px;color:#fff">→</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — GitHub Dark / Terminal</h3>
+      <p>Near-black base, monospace labels, green/red severity accents. Feels like a tool built by engineers who use terminals. High trust signal.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="display:flex;height:170px;gap:3px;background:#0f0f23;border-radius:6px;padding:8px;font-family:system-ui">
+        <!-- Left col -->
+        <div style="width:22%;background:#1a1a2e;border-radius:4px;padding:6px;">
+          <div style="font-size:8px;color:#a78bfa;margin-bottom:6px;font-weight:600;letter-spacing:.5px">Queue</div>
+          <div style="background:#16213e;border-radius:4px;padding:4px 6px;margin-bottom:3px;border-left:3px solid #ef4444">
+            <div style="font-size:8px;color:#e2e8f0">CASE-1042</div>
+            <div style="font-size:7px;color:#94a3b8">Critical · Active</div>
+          </div>
+          <div style="background:#0f0f23;border-radius:4px;padding:4px 6px;margin-bottom:3px;border-left:3px solid #f97316">
+            <div style="font-size:8px;color:#64748b">CASE-1041</div>
+            <div style="font-size:7px;color:#475569">High · Open</div>
+          </div>
+          <div style="background:#0f0f23;border-radius:4px;padding:4px 6px;border-left:3px solid #eab308">
+            <div style="font-size:8px;color:#64748b">CASE-1040</div>
+            <div style="font-size:7px;color:#475569">Medium · Open</div>
+          </div>
+        </div>
+        <!-- Center col -->
+        <div style="flex:1;background:#1a1a2e;border-radius:4px;padding:6px;">
+          <div style="font-size:9px;color:#e2e8f0;font-weight:600;margin-bottom:4px">Lateral Movement — DC01</div>
+          <div style="display:flex;gap:2px;margin-bottom:4px">
+            <span style="background:#7c3aed;color:#fff;font-size:7px;padding:2px 6px;border-radius:10px">Critical</span>
+            <span style="background:#1e3a5f;color:#93c5fd;font-size:7px;padding:2px 6px;border-radius:10px">Active</span>
+          </div>
+          <div style="background:#0f0f23;border-radius:4px;padding:4px">
+            <div style="font-size:7px;color:#a78bfa;margin-bottom:2px">▸ Timeline</div>
+            <div style="font-size:7px;color:#94a3b8">09:14 Auth failure → 09:16 Lateral move → 09:18 Dump</div>
+          </div>
+        </div>
+        <!-- Right col -->
+        <div style="width:30%;background:#1a1a2e;border-radius:4px;padding:6px;">
+          <div style="font-size:8px;color:#a78bfa;font-weight:600;margin-bottom:4px">✦ AI Console</div>
+          <div style="background:#0f0f23;border-radius:4px;padding:4px;margin-bottom:4px">
+            <div style="font-size:7px;color:#94a3b8">Summarize case</div>
+            <div style="font-size:7px;color:#c4b5fd;margin-top:2px">APT lateral movement pattern. Isolate DC01 immediately.</div>
+          </div>
+          <div style="background:#7c3aed;border-radius:4px;padding:3px 6px;font-size:7px;color:#fff;text-align:center">Run enrichment</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Deep Navy / Purple Accent</h3>
+      <p>Dark navy base with violet/purple accents. Feels modern and product-grade — closer to Splunk or Elastic's newer UI.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="display:flex;height:170px;gap:3px;background:#111827;border-radius:6px;padding:8px;font-family:system-ui">
+        <!-- Left col -->
+        <div style="width:22%;background:#1f2937;border-radius:4px;padding:6px;border:1px solid #374151">
+          <div style="font-size:8px;color:#9ca3af;margin-bottom:6px;font-weight:500;text-transform:uppercase;letter-spacing:.5px">Cases</div>
+          <div style="background:#374151;border-radius:4px;padding:4px 6px;margin-bottom:3px">
+            <div style="display:flex;align-items:center;gap:4px">
+              <div style="width:6px;height:6px;border-radius:50%;background:#ef4444;flex-shrink:0"></div>
+              <div style="font-size:8px;color:#f9fafb">CASE-1042</div>
+            </div>
+            <div style="font-size:7px;color:#6b7280;margin-top:1px;padding-left:10px">2 min ago</div>
+          </div>
+          <div style="background:#1f2937;border-radius:4px;padding:4px 6px;margin-bottom:3px">
+            <div style="display:flex;align-items:center;gap:4px">
+              <div style="width:6px;height:6px;border-radius:50%;background:#f97316;flex-shrink:0"></div>
+              <div style="font-size:8px;color:#9ca3af">CASE-1041</div>
+            </div>
+          </div>
+          <div style="background:#1f2937;border-radius:4px;padding:4px 6px">
+            <div style="display:flex;align-items:center;gap:4px">
+              <div style="width:6px;height:6px;border-radius:50%;background:#eab308;flex-shrink:0"></div>
+              <div style="font-size:8px;color:#9ca3af">CASE-1040</div>
+            </div>
+          </div>
+        </div>
+        <!-- Center col -->
+        <div style="flex:1;background:#1f2937;border-radius:4px;padding:6px;border:1px solid #374151">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <div style="font-size:9px;color:#f9fafb;font-weight:600">Lateral Movement</div>
+            <span style="background:#7f1d1d;color:#fca5a5;font-size:7px;padding:1px 5px;border-radius:3px">CRITICAL</span>
+          </div>
+          <div style="display:flex;gap:2px;margin-bottom:4px;border-bottom:1px solid #374151;padding-bottom:4px">
+            <div style="font-size:7px;color:#3b82f6;padding:2px 4px;border-bottom:1px solid #3b82f6">Timeline</div>
+            <div style="font-size:7px;color:#6b7280;padding:2px 4px">IOC</div>
+            <div style="font-size:7px;color:#6b7280;padding:2px 4px">Playbook</div>
+          </div>
+          <div style="font-size:7px;color:#d1d5db;line-height:1.6">
+            <div>09:14 · Auth failure svc_backup on DC01</div>
+            <div style="color:#fca5a5">09:16 · Lateral movement detected</div>
+            <div style="color:#fca5a5">09:18 · Credential dump attempt</div>
+          </div>
+        </div>
+        <!-- Right col -->
+        <div style="width:30%;background:#1f2937;border-radius:4px;padding:6px;border:1px solid #374151">
+          <div style="font-size:8px;color:#9ca3af;font-weight:500;margin-bottom:4px">Analyst Console</div>
+          <div style="background:#111827;border-radius:4px;padding:4px;margin-bottom:3px">
+            <div style="font-size:7px;color:#6b7280">Summarize case →</div>
+            <div style="font-size:7px;color:#d1d5db;margin-top:2px">Lateral movement via svc_backup. Recommend isolating DC01.</div>
+          </div>
+          <div style="display:flex;gap:2px">
+            <div style="flex:1;background:#111827;border-radius:3px;padding:3px;font-size:7px;color:#4b5563;border:1px solid #374151">Type query...</div>
+            <div style="background:#3b82f6;border-radius:3px;padding:3px 5px;font-size:7px;color:#fff">↵</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Slate Gray / Blue Accent</h3>
+      <p>Gray-800 base with blue accents and subtle borders. Clean, neutral, professional — closer to enterprise dashboards like Datadog or PagerDuty.</p>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:12px">Click to select, then tell me in the terminal.</p>

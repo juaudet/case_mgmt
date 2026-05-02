@@ -18,7 +18,7 @@ services:
       JWT_SECRET_KEY_FILE: /run/secrets/jwt_secret
       DEMO_MODE: 'false'
       ANTHROPIC_API_KEY_FILE: /run/secrets/anthropic_api_key
-      MCP_SERVER_URL: http://mcp:8001
+      TINES_WEBHOOK_URL: ${TINES_WEBHOOK_URL}
     secrets:
       - mongodb_url
       - redis_url
@@ -29,17 +29,7 @@ services:
     image: registry.digitalocean.com/siem/mcp:${IMAGE_TAG}
     environment:
       DEMO_MODE: 'false'
-      VT_API_KEY_FILE: /run/secrets/vt_api_key
-      CS_CLIENT_ID_FILE: /run/secrets/cs_client_id
-      CS_CLIENT_SECRET_FILE: /run/secrets/cs_client_secret
-      OTX_API_KEY_FILE: /run/secrets/otx_api_key
-      LDAP_BIND_PASSWORD_FILE: /run/secrets/ldap_bind_password
-    secrets:
-      - vt_api_key
-      - cs_client_id
-      - cs_client_secret
-      - otx_api_key
-      - ldap_bind_password
+      TINES_WEBHOOK_URL: ${TINES_WEBHOOK_URL}
 
 secrets:
   mongodb_url:
@@ -51,14 +41,4 @@ secrets:
   anthropic_api_key:
     external: true
   nextauth_secret:
-    external: true
-  vt_api_key:
-    external: true
-  cs_client_id:
-    external: true
-  cs_client_secret:
-    external: true
-  otx_api_key:
-    external: true
-  ldap_bind_password:
     external: true

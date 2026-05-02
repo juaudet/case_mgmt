@@ -1,6 +1,6 @@
 # SIEM Case Manager
 
-An AI-powered Security Operations Center (SOC) case management platform that combines structured incident tracking with real-time threat intelligence enrichment via a FastMCP sidecar server.
+An AI-powered Security Operations Center (SOC) case management platform that combines structured incident tracking with threat intelligence enrichment via **Tines MCP** (VirusTotal and AbuseIPDB tools), callable from the backend and optionally from a small FastMCP sidecar for IDE clients.
 
 ---
 
@@ -8,7 +8,7 @@ An AI-powered Security Operations Center (SOC) case management platform that com
 
 - **AI-Assisted Investigation** — Claude-powered analyst agent enriches IOCs, drafts timelines, and suggests containment actions in natural language
 - **Unified Case Management** — Create, triage, assign, and escalate security incidents with full audit trail
-- **Live Threat Intelligence** — VirusTotal, CrowdStrike Falcon, AlienVault OTX, and Active Directory enrichment via MCP tools
+- **Live Threat Intelligence** — VirusTotal and AbuseIPDB via Tines MCP (`tools/call` JSON-RPC)
 - **MITRE ATT&CK Tagging** — Technique mapping on every IOC and case timeline event
 - **Demo Mode** — Fully functional with realistic mock fixtures; no external API keys required to evaluate
 - **Role-Based Access Control** — Analyst, Tier 2, Team Lead, and Admin roles with scoped permissions
@@ -37,28 +37,17 @@ An AI-powered Security Operations Center (SOC) case management platform that com
 │   JWT Auth · MongoDB · Redis pub/sub · Beanie ODM               │
 │                        Port 8000                                │
 └──────────┬──────────────────────────────────────┬──────────────┘
-           │ HTTP (internal)                       │ Motor async
+           │ optional SSE (IDE)                      │ Motor async
            ▼                                       ▼
 ┌──────────────────────────┐         ┌─────────────────────────┐
-│  MCP Sidecar (FastMCP)   │         │   MongoDB 7             │
-│  /tools/vt_ip_report     │         │   Collections:          │
-│  /tools/vt_hash_lookup   │         │   cases, alerts, iocs   │
-│  /tools/vt_domain_scan   │         │   users, audit_log      │
-│  /tools/cs_host_details  │         └─────────────────────────┘
-│  /tools/cs_contain_host  │
-│  /tools/cs_ioc_search    │         ┌─────────────────────────┐
-│  /tools/cs_process_tree  │         │   Redis 7               │
-│  /tools/otx_indicator    │         │   Session cache         │
-│  /tools/otx_pulse_search │         │   WebSocket pub/sub     │
-│  /tools/ldap_user_lookup │         │   Rate limit buckets    │
-│         Port 8001        │         └─────────────────────────┘
-└──────────────────────────┘
-     │ DEMO_MODE=true → mock_responses/
-     │ DEMO_MODE=false → live APIs
-     ├── VirusTotal v3
-     ├── CrowdStrike Falcon
-     ├── AlienVault OTX
-     └── Active Directory (LDAP3)
+│  MCP sidecar (optional)  │         │   MongoDB 7             │
+│  FastMCP · Tines proxy   │         │   cases, alerts, iocs   │
+│  vt_* · abuseipdb_*      │         └─────────────────────────┘
+│  Port 8001               │         ┌─────────────────────────┐
+└──────────────────────────┘         │   Redis 7               │
+     mocks or Tines webhook          │   cache / pubsub        │
+                                    └─────────────────────────┘
+Backend uses the same Tines webhook when DEMO_MODE=false (no sidecar required).
 ```
 
 ---
@@ -125,36 +114,29 @@ Navigate to http://localhost:3000 and log in with the demo credentials below.
 
 With `DEMO_MODE=true` (the default), all MCP tool calls return realistic pre-seeded JSON fixtures from `mcp-server/mock_responses/`. No external API keys are required.
 
-Included mock scenarios:
+Included mock scenarios (Tines-shaped VT fixtures in `mcp-server/mock_responses/`):
 
 | Fixture | Scenario |
 |---|---|
-| `vt_ip_185.220.101.47` | Tor exit node, 52/65 malicious detections |
+| `vt_ip_185.220.101.47` | Tor exit node, high malicious detections |
 | `vt_ip_45.142.212.100` | Cobalt Strike C2 beacon (NL) |
 | `vt_hash_a3f1...` | Mimikatz — T1003.001 credential dumping |
 | `vt_hash_b7e2...` | LockBit 3.0 ransomware loader |
 | `vt_domain_corp-mail-auth.ru` | EvilProxy AiTM phishing domain |
-| `cs_host_WKST-MW-007` | Middleware workstation, not contained |
-| `cs_ioc_search_finance` | Mimikatz found on 2 Finance OU hosts |
-| `cs_process_tree` | cmd → powershell → beacon.exe chain |
-| `otx_indicator_185.220.101.47` | 47 OTX pulses — finance sector targeting |
-| `otx_indicator_corp-mail-auth.ru` | Scattered Spider attribution |
-| `ldap_user_jwong` | Finance analyst, MFA: Authenticator app |
-| `ldap_user_msmith` | Domain Admin, MFA: FIDO2 key |
 
 ---
 
-## VirusTotal Live Mode
+## Live enrichment (Tines)
 
-Local Docker Compose runs with `DEMO_MODE=true` by default, so MCP tools use deterministic mock responses.
+With `DEMO_MODE=true` (default), the backend skips live HTTP enrichment calls; the optional MCP sidecar still serves VT/AbuseIPDB-shaped **fixtures** from `mcp-server/mock_responses/`.
 
-To enable live VirusTotal calls for the MCP service:
+For live VirusTotal and AbuseIPDB via your Tines tenant:
 
-1. Create `.secrets/vt_api_key` containing your VirusTotal API key.
-2. Set the MCP service `DEMO_MODE` to `false` in `docker-compose.yml` or an override file.
-3. Restart the stack with `docker compose up --build`.
+1. Set `DEMO_MODE=false` on the **backend** (and on `mcp` if you use the sidecar).
+2. Set `TINES_WEBHOOK_URL` (or `TINES_MCP_URL`) to your Tines MCP webhook URL.
+3. Optionally override `TINES_VT_TOOL`, `TINES_ABUSEIPDB_CHECK_TOOL`, and `TINES_ABUSEIPDB_REPORTS_TOOL` if your story names differ.
 
-Never commit `.secrets/` or API keys. The repository `.gitignore` excludes `.secrets/`.
+Never commit secrets. The repository `.gitignore` excludes `.secrets/`.
 
 ---
 
@@ -175,22 +157,17 @@ Never commit `.secrets/` or API keys. The repository `.gitignore` excludes `.sec
 | `REFRESH_TOKEN_EXPIRE_DAYS` | `7` | Refresh token TTL |
 | `ANTHROPIC_API_KEY` | — | Anthropic API key (local dev without secret files) |
 | `ANTHROPIC_API_KEY_FILE` | `/run/secrets/anthropic_api_key` in Compose | If set, read API key from this path (preferred in Docker) |
-| `DEMO_MODE` | `true` | Use mock fixtures instead of live APIs |
-| `MCP_SERVER_URL` | `http://mcp:8001` | Internal MCP sidecar URL |
+| `DEMO_MODE` | `true` | Skip live Tines calls in the API; fixtures on optional MCP sidecar |
+| `TINES_WEBHOOK_URL` | — | Tines `tools/call` URL (backend live enrichment) |
+| `TINES_MCP_URL` | — | Legacy alias for `TINES_WEBHOOK_URL` |
+| `TINES_VT_TOOL` / `TINES_ABUSEIPDB_*` | defaults in code | Tines story names if yours differ |
 
-### MCP Server
+### MCP Server (optional sidecar)
 
 | Variable | Description |
 |---|---|
-| `DEMO_MODE` | When `true`, return fixture JSON instead of calling live APIs |
-| `VT_API_KEY` / `VT_API_KEY_FILE` | VirusTotal v3 API key (file mount preferred in Docker) |
-| `CS_CLIENT_ID` / `CS_CLIENT_ID_FILE` | CrowdStrike OAuth2 client ID |
-| `CS_CLIENT_SECRET` / `CS_CLIENT_SECRET_FILE` | CrowdStrike OAuth2 client secret |
-| `OTX_API_KEY` / `OTX_API_KEY_FILE` | AlienVault OTX API key |
-| `LDAP_HOST` | LDAP server URI (e.g. `ldap://10.0.0.1`) |
-| `LDAP_BIND_DN` | Service account DN for LDAP bind |
-| `LDAP_BIND_PASSWORD` / `LDAP_BIND_PASSWORD_FILE` | Service account password |
-| `LDAP_BASE_DN` | LDAP search base (e.g. `dc=corp,dc=local`) |
+| `DEMO_MODE` | When `true`, return fixture JSON from `mock_responses/` |
+| `TINES_WEBHOOK_URL` | Same Tines MCP URL as the backend |
 
 ### Frontend
 
@@ -275,7 +252,7 @@ Never commit `.secrets/` or API keys. The repository `.gitignore` excludes `.sec
 ### Sprint 1 — Foundation (complete)
 - [x] Monorepo scaffold: `frontend/`, `backend/`, `mcp-server/`
 - [x] FastAPI skeleton with JWT auth and MongoDB models
-- [x] FastMCP sidecar with VirusTotal, CrowdStrike, OTX, LDAP tools
+- [x] FastMCP sidecar (optional) with Tines-backed VT + AbuseIPDB tools
 - [x] Realistic mock fixture library (12 scenarios)
 - [x] Docker Compose for local development
 - [x] GitHub Actions CI pipeline

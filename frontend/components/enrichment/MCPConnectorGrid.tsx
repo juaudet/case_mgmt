@@ -2,30 +2,16 @@ const connectors = [
   {
     provider: 'VirusTotal',
     initials: 'VT',
-    subtitle: 'Threat intelligence',
+    subtitle: 'Via Tines MCP',
     tools: ['vt_ip_report', 'vt_hash_lookup', 'vt_domain_scan', 'vt_file_submit'],
     connected: true,
   },
   {
-    provider: 'CrowdStrike',
-    initials: 'CS',
-    subtitle: 'EDR / Falcon',
-    tools: ['cs_host_details', 'cs_process_tree', 'cs_contain_host', 'cs_ioc_search'],
+    provider: 'AbuseIPDB',
+    initials: 'AI',
+    subtitle: 'Via Tines MCP',
+    tools: ['abuseipdb_check_ip', 'abuseipdb_ip_reports'],
     connected: true,
-  },
-  {
-    provider: 'AlienVault OTX',
-    initials: 'OT',
-    subtitle: 'Threat feeds',
-    tools: ['otx_pulse_search', 'otx_indicator', 'otx_malware_family'],
-    connected: false,
-  },
-  {
-    provider: 'Microsoft Sentinel',
-    initials: 'MS',
-    subtitle: 'SIEM / SOAR',
-    tools: ['sentinel_query', 'sentinel_incident', 'sentinel_watchlist'],
-    connected: false,
   },
 ]
 
@@ -33,10 +19,10 @@ export function MCPConnectorGrid({ activeProvider }: { activeProvider?: string }
   return (
     <div>
       <div className="mb-2 flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.08em] text-[#6F7D8D]">
-        MCP integration layer — connected tools
+        Tines MCP — enrichment tools
         <span className="h-px flex-1 bg-[#3B3B37]" />
       </div>
-      <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
         {connectors.map((connector) => (
           <div
             key={connector.provider}

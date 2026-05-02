@@ -30,6 +30,11 @@ export function useCases(params?: { status?: string; severity?: string }) {
   return useQuery<CaseListItem[]>({
     queryKey: ['cases', params],
     queryFn: () => apiFetch(`/api/v1/cases?${searchParams}`, headers),
+    // List must stay fresh for mock feed / other writers; global staleTime would block interval refetch.
+    staleTime: 0,
+    refetchInterval: 5_000,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: true,
   })
 }
 
@@ -91,26 +96,6 @@ export function useEnrichIOC(caseId: string) {
         method: 'POST',
         body: JSON.stringify(data),
       }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['case', caseId] }),
-  })
-}
-
-export function useEnrichLDAP(caseId: string) {
-  const headers = useAuthHeaders()
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: () =>
-      apiFetch(`/api/v1/cases/${caseId}/enrich/ldap`, headers, { method: 'POST' }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['case', caseId] }),
-  })
-}
-
-export function useEnrichGeoIP(caseId: string) {
-  const headers = useAuthHeaders()
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: ({ ip }: { ip: string }) =>
-      apiFetch(`/api/v1/cases/${caseId}/enrich/geoip/${ip}`, headers),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['case', caseId] }),
   })
 }

@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Animation Concepts</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0d1117; color: #f0f6fc; font-family: monospace; padding: 24px; }
+  h2 { color: #58a6ff; font-size: 16px; margin-bottom: 4px; }
+  .subtitle { color: #8b949e; font-size: 12px; margin-bottom: 24px; }
+  .section { margin-bottom: 32px; }
+  .label { font-size: 10px; color: #58a6ff; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px; }
+  .note { font-size: 10px; color: #6e7681; margin-top: 6px; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; }
+
+  /* ─── 1. Critical pulse ─── */
+  @keyframes criticalPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(248,81,73,0); border-color: #490202; }
+    50%       { box-shadow: 0 0 8px 3px rgba(248,81,73,0.35); border-color: #f85149; }
+  }
+  .case-card {
+    background: #161b22; border-radius: 4px; padding: 8px 10px;
+    border-left: 3px solid #490202; border: 1px solid #21262d;
+    border-left: 3px solid #f85149; width: 160px; cursor: pointer;
+  }
+  .case-card.pulse { animation: criticalPulse 2s ease-in-out infinite; }
+  .case-card .id { font-size: 10px; color: #f0f6fc; }
+  .case-card .meta { font-size: 9px; color: #8b949e; margin-top: 2px; }
+  .case-card .badge { font-size: 8px; color: #f85149; float: right; }
+
+  /* ─── 2. IOC stagger reveal ─── */
+  @keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .ioc-card {
+    background: #1a0505; border: 1px solid #490202; border-radius: 4px;
+    padding: 8px 10px; width: 180px; opacity: 0;
+  }
+  .ioc-card.animate { animation: fadeSlideIn 0.3s ease forwards; }
+  .ioc-card.c2 { animation-delay: 0s; }
+  .ioc-card.c3 { animation-delay: 0.1s; }
+  .ioc-card.c4 { animation-delay: 0.2s; }
+  .ioc-label { font-size: 8px; color: #6e7681; margin-bottom: 2px; }
+  .ioc-value { font-size: 10px; color: #f0f6fc; }
+  .vt-badge {
+    display: inline-block; background: #f85149; color: #fff;
+    font-size: 9px; font-weight: 700; padding: 1px 5px; border-radius: 3px; float: right;
+  }
+  .vt-clean { background: #238636; }
+
+  /* ─── 3. VT score counter ─── */
+  @keyframes countUp {
+    from { opacity: 0.3; transform: scale(0.8); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  .score-demo {
+    background: #161b22; border: 1px solid #21262d; border-radius: 4px;
+    padding: 12px 16px; width: 160px; text-align: center;
+  }
+  .score-num {
+    font-size: 28px; font-weight: 700; color: #f85149;
+    animation: countUp 0.4s ease forwards;
+  }
+  .score-denom { font-size: 14px; color: #6e7681; }
+  .score-label { font-size: 9px; color: #8b949e; margin-top: 4px; }
+
+  /* ─── 4. Typewriter console ─── */
+  @keyframes typing {
+    from { width: 0; }
+    to   { width: 100%; }
+  }
+  @keyframes blink { 50% { border-color: transparent; } }
+  .console-demo {
+    background: #161b22; border: 1px solid #21262d; border-radius: 4px;
+    padding: 10px 12px; width: 320px;
+  }
+  .console-prompt { font-size: 9px; color: #6e7681; margin-bottom: 6px; }
+  .console-response {
+    font-size: 9px; color: #3fb950; overflow: hidden; white-space: nowrap;
+    border-right: 1px solid #3fb950; width: 0;
+    animation: typing 2s steps(60) 0.5s forwards, blink 0.7s step-end infinite;
+  }
+
+  /* ─── 5. Timeline dot pulse ─── */
+  @keyframes dotPulse {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(248,81,73,0.4); }
+    50%       { transform: scale(1.3); box-shadow: 0 0 0 5px rgba(248,81,73,0); }
+  }
+  .timeline-demo { background: #161b22; border: 1px solid #21262d; border-radius: 4px; padding: 10px 12px; width: 220px; }
+  .tl-row { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 8px; }
+  .tl-dot {
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 1px;
+  }
+  .tl-dot.critical { background: #f85149; animation: dotPulse 1.5s ease-in-out infinite; }
+  .tl-dot.ok { background: #3fb950; }
+  .tl-dot.warn { background: #d29922; }
+  .tl-time { font-size: 8px; color: #6e7681; min-width: 35px; }
+  .tl-text { font-size: 8px; color: #f0f6fc; }
+
+  /* ─── 6. Playbook step complete ─── */
+  @keyframes checkDraw {
+    from { stroke-dashoffset: 30; opacity: 0; }
+    to   { stroke-dashoffset: 0; opacity: 1; }
+  }
+  @keyframes stepSlide {
+    from { opacity: 0; transform: translateX(-6px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  .step-demo { background: #161b22; border: 1px solid #21262d; border-radius: 4px; padding: 10px 12px; width: 220px; }
+  .step-row { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; animation: stepSlide 0.3s ease forwards; }
+  .step-row:nth-child(2) { animation-delay: 0.1s; opacity: 0; }
+  .step-row:nth-child(3) { animation-delay: 0.2s; opacity: 0; }
+  .check-circle {
+    width: 16px; height: 16px; border-radius: 50%; background: #238636;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .check-circle svg { width: 10px; height: 10px; }
+  .check-circle svg polyline {
+    stroke: #fff; stroke-width: 2; fill: none;
+    stroke-dasharray: 30; stroke-dashoffset: 30;
+    animation: checkDraw 0.3s ease 0.1s forwards;
+  }
+  .pending-circle { width: 16px; height: 16px; border-radius: 50%; border: 1px solid #21262d; flex-shrink: 0; }
+  .step-text { font-size: 8px; color: #8b949e; }
+  .step-text.done { color: #f0f6fc; }
+
+  /* replay button */
+  .replay-btn {
+    background: #21262d; border: none; color: #58a6ff; font-family: monospace;
+    font-size: 10px; padding: 4px 10px; border-radius: 3px; cursor: pointer; margin-top: 8px;
+  }
+</style>
+</head>
+<body>
+
+<h2>Animation Candidates</h2>
+<p class="subtitle">Purposeful animations for the SOC workspace — hover/click "replay" to re-trigger</p>
+
+<div class="section">
+  <div class="label">1 — Critical case pulse (queue)</div>
+  <div class="row">
+    <div class="case-card pulse">
+      <span class="badge">CRIT</span>
+      <div class="id">CASE-1042</div>
+      <div class="meta">Lateral movement · 2m</div>
+    </div>
+    <div class="case-card" style="border-left-color:#f0883e;opacity:0.6">
+      <span class="badge" style="color:#f0883e">HIGH</span>
+      <div class="id" style="color:#8b949e">CASE-1041</div>
+      <div class="meta">Phishing · 14m</div>
+    </div>
+  </div>
+  <div class="note">Critical cases pulse with a red glow. Draws the eye without demanding attention.</div>
+</div>
+
+<div class="section">
+  <div class="label">2 — IOC cards stagger in when case loads</div>
+  <div class="row" id="ioc-row">
+    <div class="ioc-card animate c2">
+      <div class="ioc-label">IP ADDRESS <span class="vt-badge">VT 67/90</span></div>
+      <div class="ioc-value">185.220.101.47</div>
+    </div>
+    <div class="ioc-card animate c3" style="background:#0d1a10;border-color:#1a3a20">
+      <div class="ioc-label">IP ADDRESS <span class="vt-badge vt-clean">VT 0/90</span></div>
+      <div class="ioc-value" style="color:#8b949e">10.0.1.45</div>
+    </div>
+    <div class="ioc-card animate c4">
+      <div class="ioc-label">DOMAIN <span class="vt-badge">VT 81/90</span></div>
+      <div class="ioc-value">c2.evil-host.ru</div>
+    </div>
+  </div>
+  <button class="replay-btn" onclick="replayIOC()">↺ replay</button>
+  <div class="note">Each card fades + slides up with a 100ms stagger. Fast enough to not feel slow.</div>
+</div>
+
+<div class="section">
+  <div class="label">3 — VT score scales in on card appear</div>
+  <div class="row">
+    <div class="score-demo">
+      <div class="score-num" id="score-val">67</div>
+      <div class="score-denom">/ 90 engines</div>
+      <div class="score-label">VirusTotal · MALICIOUS</div>
+    </div>
+    <div class="score-demo" style="width:160px">
+      <div class="score-num" style="color:#238636">0</div>
+      <div class="score-denom">/ 90 engines</div>
+      <div class="score-label">VirusTotal · CLEAN</div>
+    </div>
+  </div>
+  <button class="replay-btn" onclick="replayScore()">↺ replay</button>
+  <div class="note">Score badge scales in — makes it feel live, not static.</div>
+</div>
+
+<div class="section">
+  <div class="label">4 — AI console typewriter response</div>
+  <div class="console-demo">
+    <div class="console-prompt">› summarize case</div>
+    <div class="console-response" id="typewriter">Lateral movement via svc_backup. Isolate DC01 immediately.</div>
+  </div>
+  <button class="replay-btn" onclick="replayType()">↺ replay</button>
+  <div class="note">Response types in character by character. Matches the terminal aesthetic perfectly.</div>
+</div>
+
+<div class="section">
+  <div class="label">5 — Timeline critical event dot pulse</div>
+  <div class="timeline-demo">
+    <div class="tl-row">
+      <div class="tl-dot ok"></div>
+      <div class="tl-time">09:14</div>
+      <div class="tl-text">Auth failure svc_backup</div>
+    </div>
+    <div class="tl-row">
+      <div class="tl-dot critical"></div>
+      <div class="tl-time">09:16</div>
+      <div class="tl-text" style="color:#f85149">Lateral movement DC01</div>
+    </div>
+    <div class="tl-row">
+      <div class="tl-dot critical"></div>
+      <div class="tl-time">09:18</div>
+      <div class="tl-text" style="color:#f85149">LSASS dump attempt</div>
+    </div>
+    <div class="tl-row">
+      <div class="tl-dot warn"></div>
+      <div class="tl-time">09:21</div>
+      <div class="tl-text">C2 beacon outbound</div>
+    </div>
+  </div>
+  <div class="note">Only CRITICAL severity events pulse. Low noise signal.</div>
+</div>
+
+<div class="section">
+  <div class="label">6 — Playbook step completion checkmark</div>
+  <div class="step-demo">
+    <div class="step-row">
+      <div class="check-circle">
+        <svg viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"/></svg>
+      </div>
+      <div class="step-text done">Isolate affected host</div>
+    </div>
+    <div class="step-row">
+      <div class="check-circle">
+        <svg viewBox="0 0 12 12"><polyline points="2,6 5,9 10,3"/></svg>
+      </div>
+      <div class="step-text done">Preserve memory forensics</div>
+    </div>
+    <div class="step-row">
+      <div class="pending-circle"></div>
+      <div class="step-text">Reset svc_backup credentials</div>
+    </div>
+  </div>
+  <button class="replay-btn" onclick="replaySteps()">↺ replay</button>
+  <div class="note">SVG checkmark draws in on completion. Clean, satisfying micro-interaction.</div>
+</div>
+
+<script>
+function replayIOC() {
+  const cards = document.querySelectorAll('.ioc-card');
+  cards.forEach(c => { c.classList.remove('animate'); void c.offsetWidth; c.classList.add('animate'); });
+}
+function replayScore() {
+  const el = document.getElementById('score-val');
+  el.style.animation = 'none'; void el.offsetWidth;
+  el.style.animation = 'countUp 0.4s ease forwards';
+}
+function replayType() {
+  const el = document.getElementById('typewriter');
+  el.style.animation = 'none'; void el.offsetWidth;
+  el.style.animation = 'typing 2s steps(60) 0.5s forwards, blink 0.7s step-end infinite';
+}
+function replaySteps() {
+  const rows = document.querySelectorAll('.step-row');
+  rows.forEach(r => { r.style.animation = 'none'; void r.offsetWidth; });
+  rows[0].style.animation = 'stepSlide 0.3s ease forwards';
+  rows[1].style.animation = 'stepSlide 0.3s ease 0.1s forwards';
+  rows[2].style.animation = 'stepSlide 0.3s ease 0.2s forwards';
+  const checks = document.querySelectorAll('.check-circle svg polyline');
+  checks.forEach(c => { c.style.animation = 'none'; void c.offsetWidth; c.style.animation = 'checkDraw 0.3s ease 0.1s forwards'; });
+}
+</script>
+</body>
+</html>

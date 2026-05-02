@@ -20,7 +20,8 @@ const DEFAULT_CONTEXT_FLAGS: ContextFlags = {
   ldap: true,
   ioc_data: true,
   virustotal: false,
-  crowdstrike: false,
+  abuseipdb: false,
+  mcp_findings: true,
   playbook_state: true,
 }
 

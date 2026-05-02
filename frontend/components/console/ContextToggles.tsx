@@ -1,9 +1,10 @@
 export const CONTEXT_LABELS = {
   case_details: 'Case details',
-  ldap: 'LDAP enrichment',
+  ldap: 'LDAP context',
   ioc_data: 'IOC data',
   virustotal: 'VirusTotal results',
-  crowdstrike: 'CrowdStrike telemetry',
+  abuseipdb: 'AbuseIPDB results',
+  mcp_findings: 'MCP findings',
   playbook_state: 'Playbook state',
 } satisfies Record<string, string>
 

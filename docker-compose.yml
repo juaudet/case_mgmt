@@ -23,14 +23,15 @@ services:
       REDIS_URL: redis://redis:6379
       JWT_SECRET_KEY_FILE: /run/secrets/jwt_secret
       DEMO_MODE: 'true'
+      MOCK_INCIDENT_FEED: 'true'
       ANTHROPIC_API_KEY_FILE: /run/secrets/anthropic_api_key
-      MCP_SERVER_URL: http://mcp:8001
+      # Enrichment calls Tines directly (no MCP sidecar required for the API).
+      TINES_WEBHOOK_URL: https://<YOUR-TINES-TENANT>.tines.com/mcp/<YOUR-TOKEN>
     volumes:
       - ./.secrets:/run/secrets:ro
     depends_on:
       - mongo
       - redis
-      - mcp
 
   mcp:
     build: ./mcp-server
@@ -38,11 +39,8 @@ services:
       - '8001:8001'
     environment:
       DEMO_MODE: 'true'
-      VT_API_KEY_FILE: /run/secrets/vt_api_key
-      CS_CLIENT_ID_FILE: /run/secrets/cs_client_id
-      CS_CLIENT_SECRET_FILE: /run/secrets/cs_client_secret
-      OTX_API_KEY_FILE: /run/secrets/otx_api_key
-      LDAP_BIND_PASSWORD_FILE: /run/secrets/ldap_bind_password
+      # Tines tools/call webhook (TINES_MCP_URL is still accepted as an alias in tines_client).
+      TINES_WEBHOOK_URL: https://<YOUR-TINES-TENANT>.tines.com/mcp/<YOUR-TOKEN>
     volumes:
       - ./.secrets:/run/secrets:ro
 

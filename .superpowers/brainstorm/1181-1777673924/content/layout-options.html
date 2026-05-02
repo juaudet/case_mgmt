@@ -1,0 +1,100 @@
+<h2>Analyst Workspace Layout</h2>
+<p class="subtitle">Which structure best supports the full triage → enrich → playbook → console loop?</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="display:flex;height:160px;gap:4px;background:#0f1117;border-radius:6px;padding:8px;font-size:10px;color:#8b8fa8">
+        <div style="width:22%;background:#1a1d2e;border-radius:4px;padding:6px;">
+          <div style="background:#252840;border-radius:3px;padding:4px 6px;margin-bottom:4px;font-size:9px;color:#e2e8f0">🔴 CASE-1042</div>
+          <div style="background:#1e2035;border-radius:3px;padding:4px 6px;margin-bottom:4px;font-size:9px;color:#64748b">🟠 CASE-1041</div>
+          <div style="background:#1e2035;border-radius:3px;padding:4px 6px;font-size:9px;color:#64748b">🟡 CASE-1040</div>
+        </div>
+        <div style="flex:1;background:#1a1d2e;border-radius:4px;padding:6px;">
+          <div style="font-size:9px;color:#94a3b8;margin-bottom:6px;border-bottom:1px solid #252840;padding-bottom:4px">Case Detail · Timeline · IOC · Playbook</div>
+          <div style="background:#252840;border-radius:3px;padding:4px;margin-bottom:3px;font-size:8px;color:#cbd5e1">📋 Lateral movement detected — 3 hosts</div>
+          <div style="background:#252840;border-radius:3px;padding:4px;margin-bottom:3px;font-size:8px;color:#cbd5e1">🔍 IOC: 192.168.1.45 — malicious</div>
+          <div style="background:#252840;border-radius:3px;padding:4px;font-size:8px;color:#cbd5e1">▶ Playbook: Step 2 of 5</div>
+        </div>
+        <div style="width:28%;background:#1a1d2e;border-radius:4px;padding:6px;">
+          <div style="font-size:9px;color:#94a3b8;margin-bottom:6px;border-bottom:1px solid #252840;padding-bottom:4px">AI Console</div>
+          <div style="background:#0f1117;border-radius:3px;padding:4px;margin-bottom:3px;font-size:8px;color:#64748b">Analyze this IOC in context...</div>
+          <div style="background:#252840;border-radius:3px;padding:4px;font-size:8px;color:#93c5fd">→ Correlates with APT-29 pattern</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Three-Column Workspace</h3>
+      <p>Case queue left · Detail center · AI Console right. Everything visible at once. Classic SIEM feel, but unified.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="display:flex;flex-direction:column;height:160px;gap:4px;background:#0f1117;border-radius:6px;padding:8px;font-size:10px;color:#8b8fa8">
+        <div style="display:flex;gap:4px;height:28px;align-items:center">
+          <div style="background:#1a1d2e;border-radius:3px;padding:4px 10px;font-size:9px;color:#e2e8f0">⚡ CASE-1042</div>
+          <div style="background:#1a1d2e;border-radius:3px;padding:4px 8px;font-size:9px;color:#64748b">Timeline</div>
+          <div style="background:#3b82f6;border-radius:3px;padding:4px 8px;font-size:9px;color:#fff">Enrich</div>
+          <div style="background:#1a1d2e;border-radius:3px;padding:4px 8px;font-size:9px;color:#64748b">Playbook</div>
+          <div style="background:#1a1d2e;border-radius:3px;padding:4px 8px;font-size:9px;color:#64748b">Console</div>
+          <div style="margin-left:auto;background:#1a1d2e;border-radius:3px;padding:4px 8px;font-size:9px;color:#64748b">↑ Queue</div>
+        </div>
+        <div style="flex:1;display:flex;gap:4px">
+          <div style="flex:1;background:#1a1d2e;border-radius:4px;padding:6px">
+            <div style="font-size:9px;color:#94a3b8;margin-bottom:4px">Enrichment Results</div>
+            <div style="background:#252840;border-radius:3px;padding:4px;margin-bottom:3px;font-size:8px;color:#f59e0b">VT: Malicious · Score 89/100</div>
+            <div style="background:#252840;border-radius:3px;padding:4px;margin-bottom:3px;font-size:8px;color:#cbd5e1">GeoIP: RU · AS12345</div>
+            <div style="background:#252840;border-radius:3px;padding:4px;font-size:8px;color:#cbd5e1">LDAP: svc_backup — admin group</div>
+          </div>
+          <div style="width:35%;background:#1a1d2e;border-radius:4px;padding:6px">
+            <div style="font-size:9px;color:#94a3b8;margin-bottom:4px">Context</div>
+            <div style="background:#252840;border-radius:3px;padding:4px;margin-bottom:3px;font-size:8px;color:#cbd5e1">Affected: 3 hosts</div>
+            <div style="background:#252840;border-radius:3px;padding:4px;font-size:8px;color:#f87171">Severity: Critical</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Tab-Driven Full Focus</h3>
+      <p>One case fills the screen with top tabs: Timeline · Enrich · Playbook · Console. Queue accessible via drawer. Maximizes detail space per phase.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="display:flex;height:160px;gap:4px;background:#0f1117;border-radius:6px;padding:8px;font-size:10px;color:#8b8fa8">
+        <div style="width:20%;background:#1a1d2e;border-radius:4px;padding:6px;">
+          <div style="font-size:9px;color:#64748b;margin-bottom:4px">Queue</div>
+          <div style="background:#252840;border-radius:3px;padding:4px 6px;margin-bottom:3px;font-size:8px;color:#f87171">● CASE-1042</div>
+          <div style="background:#1e2035;border-radius:3px;padding:4px 6px;margin-bottom:3px;font-size:8px;color:#64748b">● CASE-1041</div>
+          <div style="background:#1e2035;border-radius:3px;padding:4px 6px;font-size:8px;color:#64748b">● CASE-1040</div>
+          <div style="margin-top:auto;border-top:1px solid #252840;padding-top:6px;margin-top:6px">
+            <div style="font-size:8px;color:#3b82f6;cursor:pointer">📚 Playbooks</div>
+          </div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:4px">
+          <div style="height:55%;background:#1a1d2e;border-radius:4px;padding:6px;">
+            <div style="font-size:9px;color:#94a3b8;margin-bottom:4px;border-bottom:1px solid #252840;padding-bottom:3px">CASE-1042 — Lateral Movement</div>
+            <div style="display:flex;gap:4px">
+              <div style="flex:1;background:#0f1117;border-radius:3px;padding:4px;font-size:8px;color:#64748b">Timeline · IOC · Assets</div>
+              <div style="background:#7c3aed;border-radius:3px;padding:4px 8px;font-size:8px;color:#fff">▶ Run Playbook</div>
+            </div>
+          </div>
+          <div style="flex:1;background:#1a1d2e;border-radius:4px;padding:6px;">
+            <div style="font-size:9px;color:#94a3b8;margin-bottom:4px">🤖 Analyst Console</div>
+            <div style="background:#0f1117;border-radius:3px;padding:4px;font-size:8px;color:#64748b">Always visible · context-aware</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Split + Persistent Console</h3>
+      <p>Queue left · Case detail top-right · AI Console pinned bottom-right. Console always in view regardless of what tab you're on.</p>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:16px">Click to select. Let me know in the terminal what resonates — or what's missing.</p>

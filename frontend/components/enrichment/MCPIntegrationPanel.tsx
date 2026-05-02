@@ -5,7 +5,6 @@ import { useRunMCPTool } from '@/lib/api'
 import { MCPConnectorGrid } from './MCPConnectorGrid'
 import { MCPToolCallCard } from './MCPToolCallCard'
 import { ConsolidatedFindings } from './ConsolidatedFindings'
-import { CrowdStrikeIOCSearch } from './CrowdStrikeIOCSearch'
 
 export function MCPIntegrationPanel({ caseData, caseId }: { caseData: Case; caseId: string }) {
   const runTool = useRunMCPTool(caseId)
@@ -63,6 +62,19 @@ export function MCPIntegrationPanel({ caseData, caseId }: { caseData: Case; case
             >
               Run vt_domain_scan ↗
             </button>
+            <button
+              className={buttonClass}
+              disabled={!ip || runTool.isPending}
+              onClick={() =>
+                ip &&
+                runTool.mutate({
+                  tool_name: 'abuseipdb_check_ip',
+                  params: { ip },
+                })
+              }
+            >
+              Run abuseipdb_check_ip ↗
+            </button>
           </div>
           {caseData.mcp_calls.length ? (
             caseData.mcp_calls.map((call) => <MCPToolCallCard key={call.id} call={call} />)
@@ -74,7 +86,6 @@ export function MCPIntegrationPanel({ caseData, caseId }: { caseData: Case; case
         </div>
       </div>
       <ConsolidatedFindings findings={caseData.mcp_findings} />
-      <CrowdStrikeIOCSearch caseData={caseData} />
     </div>
   )
 }

@@ -1,8 +1,6 @@
 'use client'
 import type { Case } from '@/types'
 import { LDAPPanel } from '@/components/enrichment/LDAPPanel'
-import { GeoIPPanel } from '@/components/enrichment/GeoIPPanel'
-import { useEnrichLDAP, useEnrichGeoIP } from '@/lib/api'
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
@@ -178,17 +176,7 @@ function LDAPContextRows({
   )
 }
 
-export function CaseRightPane({
-  caseData,
-  caseId,
-}: {
-  caseData: Case
-  caseId: string
-}) {
-  const enrichLDAP = useEnrichLDAP(caseId)
-  const enrichGeoIP = useEnrichGeoIP(caseId)
-
-  const firstIPv4 = caseData.iocs.find((ioc) => ioc.type === 'ipv4')?.value
+export function CaseRightPane({ caseData }: { caseData: Case }) {
   const progress = slaProgress(caseData.sla_deadline)
   const isSlaCritical = progress >= 60
 
@@ -275,28 +263,7 @@ export function CaseRightPane({
           className="rounded border p-2.5"
           style={{ background: '#162030', borderColor: '#1E3048' }}
         >
-          <LDAPContextRows
-            data={caseData.ldap_context}
-            onEnrich={() => enrichLDAP.mutate()}
-            loading={enrichLDAP.isPending}
-          />
-        </div>
-      </div>
-
-      {/* GeoIP */}
-      <div className="mb-4">
-        <SectionTitle>
-          GeoIP{firstIPv4 ? ` — ${firstIPv4}` : ''}
-        </SectionTitle>
-        <div
-          className="rounded border p-2.5"
-          style={{ background: '#162030', borderColor: '#1E3048' }}
-        >
-          <GeoIPPanel
-            ip={firstIPv4}
-            onEnrich={firstIPv4 ? () => enrichGeoIP.mutate({ ip: firstIPv4 }) : undefined}
-            loading={enrichGeoIP.isPending}
-          />
+          <LDAPContextRows data={caseData.ldap_context} />
         </div>
       </div>
 

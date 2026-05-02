@@ -230,6 +230,7 @@ async def test_ingest_splunk_case(async_client: AsyncClient, analyst_token: str)
     assert body["severity"] == "medium"
     assert body["assigned_to"] == "analyst.kim@corp.local"
     assert "splunk" in body["tags"]
+    assert len(body["iocs"]) >= 1
 
 
 @pytest.mark.asyncio

@@ -8,7 +8,7 @@ const steps: PlaybookStep[] = [
     title: 'Identify affected account',
     description: 'Confirm the principal account and blast radius.',
     auto: false,
-    mcp_tools: ['ldap_user_lookup'],
+    mcp_tools: ['vt_ip_report'],
     branches: [],
     mitre_technique: 'T1078',
   },

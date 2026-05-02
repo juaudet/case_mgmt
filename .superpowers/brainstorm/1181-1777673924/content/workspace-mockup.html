@@ -1,0 +1,177 @@
+<h2>Unified Analyst Workspace — Design Preview</h2>
+<p class="subtitle">Full triage → enrich → playbook → console loop in one screen</p>
+
+<div class="mockup">
+  <div class="mockup-header">/ dashboard — Analyst Workspace</div>
+  <div class="mockup-body" style="padding:0">
+    <!-- Top bar -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 12px;background:#0d1117;border-bottom:1px solid #21262d">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:10px;color:#58a6ff;font-family:monospace;font-weight:600">⬡ CASEMGMT</span>
+        <span style="font-size:9px;color:#21262d">|</span>
+        <span style="font-size:9px;color:#f85149;font-family:monospace">● 3 CRITICAL</span>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span style="font-size:9px;color:#8b949e;font-family:monospace">analyst.kim</span>
+        <span style="font-size:9px;color:#58a6ff;font-family:monospace;cursor:pointer">logout</span>
+      </div>
+    </div>
+
+    <!-- Three columns -->
+    <div style="display:flex;height:340px">
+
+      <!-- Left: Case Queue -->
+      <div style="width:200px;background:#161b22;border-right:1px solid #21262d;padding:8px;overflow-y:auto;flex-shrink:0">
+        <div style="font-size:8px;color:#58a6ff;font-family:monospace;letter-spacing:1px;margin-bottom:6px">CASE QUEUE</div>
+        <div style="background:#0d1117;border-radius:3px;padding:3px 6px;margin-bottom:2px;font-size:8px;color:#6e7681;font-family:monospace">
+          🔍 filter cases...
+        </div>
+        <div style="margin-top:6px">
+
+          <!-- Active case -->
+          <div style="background:#21262d;border-radius:3px;padding:5px 7px;margin-bottom:3px;border-left:2px solid #f85149;cursor:pointer">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:8px;color:#f0f6fc;font-family:monospace">CASE-1042</span>
+              <span style="font-size:7px;color:#f85149;font-family:monospace">CRIT</span>
+            </div>
+            <div style="font-size:7px;color:#8b949e;margin-top:1px">Lateral movement · 2m</div>
+          </div>
+
+          <div style="background:#161b22;border-radius:3px;padding:5px 7px;margin-bottom:3px;border-left:2px solid #f0883e;cursor:pointer;opacity:0.7">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:8px;color:#8b949e;font-family:monospace">CASE-1041</span>
+              <span style="font-size:7px;color:#f0883e;font-family:monospace">HIGH</span>
+            </div>
+            <div style="font-size:7px;color:#6e7681;margin-top:1px">Phishing · 14m</div>
+          </div>
+
+          <div style="background:#161b22;border-radius:3px;padding:5px 7px;margin-bottom:3px;border-left:2px solid #eab308;cursor:pointer;opacity:0.7">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:8px;color:#8b949e;font-family:monospace">CASE-1040</span>
+              <span style="font-size:7px;color:#eab308;font-family:monospace">MED</span>
+            </div>
+            <div style="font-size:7px;color:#6e7681;margin-top:1px">Anomaly · 1h</div>
+          </div>
+
+          <div style="background:#161b22;border-radius:3px;padding:5px 7px;margin-bottom:3px;border-left:2px solid #3fb950;cursor:pointer;opacity:0.7">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:8px;color:#8b949e;font-family:monospace">CASE-1039</span>
+              <span style="font-size:7px;color:#3fb950;font-family:monospace">LOW</span>
+            </div>
+            <div style="font-size:7px;color:#6e7681;margin-top:1px">Recon · 3h</div>
+          </div>
+        </div>
+
+        <!-- Severity legend -->
+        <div style="margin-top:auto;padding-top:8px;border-top:1px solid #21262d;margin-top:16px">
+          <div style="font-size:7px;color:#58a6ff;font-family:monospace;letter-spacing:1px;margin-bottom:4px">PLAYBOOKS</div>
+          <div style="font-size:7px;color:#8b949e;font-family:monospace;cursor:pointer">→ Ransomware IR</div>
+          <div style="font-size:7px;color:#8b949e;font-family:monospace;cursor:pointer;margin-top:2px">→ Phishing Triage</div>
+          <div style="font-size:7px;color:#8b949e;font-family:monospace;cursor:pointer;margin-top:2px">→ Lateral Movement</div>
+        </div>
+      </div>
+
+      <!-- Center: Case Detail -->
+      <div style="flex:1;background:#0d1117;display:flex;flex-direction:column;overflow:hidden">
+        <!-- Case header -->
+        <div style="padding:8px 12px;border-bottom:1px solid #21262d;background:#161b22">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div>
+              <span style="font-size:10px;color:#f0f6fc;font-family:monospace;font-weight:600">CASE-1042</span>
+              <span style="font-size:9px;color:#8b949e;margin-left:8px">Lateral Movement — DC01 Compromise</span>
+            </div>
+            <div style="display:flex;gap:4px">
+              <span style="background:#490202;color:#f85149;font-size:7px;padding:2px 6px;border-radius:3px;font-family:monospace">CRITICAL</span>
+              <span style="background:#1e3a5f;color:#58a6ff;font-size:7px;padding:2px 6px;border-radius:3px;font-family:monospace">ACTIVE</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabs -->
+        <div style="display:flex;gap:0;border-bottom:1px solid #21262d;background:#161b22">
+          <div style="padding:5px 12px;font-size:8px;color:#58a6ff;font-family:monospace;border-bottom:2px solid #58a6ff">Timeline</div>
+          <div style="padding:5px 12px;font-size:8px;color:#6e7681;font-family:monospace">IOC Analysis</div>
+          <div style="padding:5px 12px;font-size:8px;color:#6e7681;font-family:monospace">Enrichment</div>
+          <div style="padding:5px 12px;font-size:8px;color:#6e7681;font-family:monospace">▶ Playbook</div>
+          <div style="padding:5px 12px;font-size:8px;color:#6e7681;font-family:monospace">Raw Logs</div>
+        </div>
+
+        <!-- Tab content -->
+        <div style="flex:1;padding:10px 12px;overflow-y:auto">
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <div style="display:flex;gap:8px;align-items:flex-start">
+              <span style="font-size:8px;color:#6e7681;font-family:monospace;white-space:nowrap;padding-top:1px">09:14:02</span>
+              <div style="width:6px;height:6px;border-radius:50%;background:#3fb950;margin-top:2px;flex-shrink:0"></div>
+              <div>
+                <div style="font-size:8px;color:#8b949e;font-family:monospace">AUTH_FAILURE</div>
+                <div style="font-size:8px;color:#f0f6fc">svc_backup failed login on DC01 (3 attempts)</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:flex-start">
+              <span style="font-size:8px;color:#6e7681;font-family:monospace;white-space:nowrap;padding-top:1px">09:16:18</span>
+              <div style="width:6px;height:6px;border-radius:50%;background:#f85149;margin-top:2px;flex-shrink:0"></div>
+              <div>
+                <div style="font-size:8px;color:#f85149;font-family:monospace">LATERAL_MOVE</div>
+                <div style="font-size:8px;color:#f0f6fc">SMB lateral movement detected: WS01 → DC01</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:flex-start">
+              <span style="font-size:8px;color:#6e7681;font-family:monospace;white-space:nowrap;padding-top:1px">09:18:44</span>
+              <div style="width:6px;height:6px;border-radius:50%;background:#f85149;margin-top:2px;flex-shrink:0"></div>
+              <div>
+                <div style="font-size:8px;color:#f85149;font-family:monospace">CRED_DUMP</div>
+                <div style="font-size:8px;color:#f0f6fc">LSASS dump attempt on DC01 via mimikatz signature</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;align-items:flex-start">
+              <span style="font-size:8px;color:#6e7681;font-family:monospace;white-space:nowrap;padding-top:1px">09:21:05</span>
+              <div style="width:6px;height:6px;border-radius:50%;background:#d29922;margin-top:2px;flex-shrink:0"></div>
+              <div>
+                <div style="font-size:8px;color:#d29922;font-family:monospace">C2_BEACON</div>
+                <div style="font-size:8px;color:#f0f6fc">Outbound beacon → 185.220.101.47:443 (TOR exit)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: AI Console -->
+      <div style="width:240px;background:#161b22;border-left:1px solid #21262d;display:flex;flex-direction:column;flex-shrink:0">
+        <div style="padding:8px 10px;border-bottom:1px solid #21262d">
+          <div style="font-size:8px;color:#58a6ff;font-family:monospace;letter-spacing:1px">AI CONSOLE</div>
+        </div>
+
+        <!-- History -->
+        <div style="flex:1;padding:8px;overflow-y:auto;display:flex;flex-direction:column;gap:4px">
+          <div style="background:#0d1117;border-radius:3px;padding:5px 7px">
+            <div style="font-size:7px;color:#6e7681;font-family:monospace;margin-bottom:3px">› summarize case</div>
+            <div style="font-size:7px;color:#3fb950;line-height:1.5">Lateral movement via compromised svc_backup account. LSASS dump + C2 beacon suggests active exfil. Recommend: isolate DC01, reset svc_backup, preserve memory forensics.</div>
+          </div>
+          <div style="background:#0d1117;border-radius:3px;padding:5px 7px">
+            <div style="font-size:7px;color:#6e7681;font-family:monospace;margin-bottom:3px">› enrich IOC 185.220.101.47</div>
+            <div style="font-size:7px;color:#3fb950;line-height:1.5">TOR exit node. VT: 67/90 engines flagged. OTX: linked to APT-29 campaign. Recommend block at perimeter.</div>
+          </div>
+        </div>
+
+        <!-- Input -->
+        <div style="padding:8px;border-top:1px solid #21262d">
+          <!-- Templates -->
+          <div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:6px">
+            <span style="background:#21262d;font-size:7px;color:#8b949e;font-family:monospace;padding:2px 5px;border-radius:3px;cursor:pointer">summarize</span>
+            <span style="background:#21262d;font-size:7px;color:#8b949e;font-family:monospace;padding:2px 5px;border-radius:3px;cursor:pointer">ioc hunt</span>
+            <span style="background:#21262d;font-size:7px;color:#8b949e;font-family:monospace;padding:2px 5px;border-radius:3px;cursor:pointer">mitre map</span>
+          </div>
+          <div style="display:flex;gap:3px">
+            <div style="flex:1;background:#0d1117;border:1px solid #21262d;border-radius:3px;padding:4px 6px;font-size:8px;color:#6e7681;font-family:monospace">
+              ask anything...
+            </div>
+            <div style="background:#238636;border-radius:3px;padding:4px 7px;font-size:8px;color:#fff;cursor:pointer">→</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<p class="subtitle" style="margin-top:12px">Does this layout and style feel right? Let me know in the terminal — any changes before we lock in the design.</p>

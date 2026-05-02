@@ -77,8 +77,7 @@ export interface Case {
   sla_deadline?: string
   ldap_context?: Record<string, unknown>
   vt_results?: Record<string, unknown>
-  cs_results?: Record<string, unknown>
-  otx_results?: Record<string, unknown>
+  abuseipdb_results?: Record<string, unknown>
   playbook_id?: string
   playbook_state?: PlaybookState
   parent_case_id?: string

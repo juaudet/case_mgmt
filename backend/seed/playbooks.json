@@ -36,9 +36,9 @@
       {
         "step_id": "step_2b",
         "title": "URL Reputation Check",
-        "description": "Query VirusTotal and OTX for the embedded URL / domain. Check for redirects to credential-harvesting pages or drive-by-download infrastructure.",
+        "description": "Query VirusTotal (via Tines) for the embedded URL / domain. Check for redirects to credential-harvesting pages or drive-by-download infrastructure.",
         "auto": true,
-        "mcp_tools": ["vt_domain_scan", "otx_indicator"],
+        "mcp_tools": ["vt_domain_scan"],
         "condition_field": "url_category",
         "branches": [
           {"when": "eq:credential_harvest", "goto": "step_3_high", "label": "Credential phishing page"},
@@ -50,9 +50,9 @@
       {
         "step_id": "step_3_high",
         "title": "Privileged User Impact Check",
-        "description": "Query LDAP/AD for all recipients. Determine if any affected accounts hold elevated privileges (DA, EA, privileged service accounts). If yes, escalate immediately to credential_theft playbook.",
+        "description": "Review LDAP/AD for all recipients (case context). Determine if any affected accounts hold elevated privileges (DA, EA, privileged service accounts). If yes, escalate immediately to credential_theft playbook.",
         "auto": false,
-        "mcp_tools": ["ldap_user_lookup"],
+        "mcp_tools": [],
         "condition_field": "is_privileged",
         "branches": [
           {"when": "bool:true", "goto": "escalate:credential_theft", "label": "Privileged account involved — escalate"}
@@ -106,7 +106,7 @@
         "title": "Identify Compromised Account Scope",
         "description": "Pull authentication logs for the past 72 hours. Identify all successful logins from unusual IPs or outside business hours. List every account showing anomalous auth patterns.",
         "auto": true,
-        "mcp_tools": ["ldap_user_lookup"],
+        "mcp_tools": [],
         "condition_field": "account_count",
         "branches": [
           {"when": "gte:5", "goto": "ct_step_2_broad", "label": "Broad compromise (5+ accounts)"},
@@ -131,7 +131,7 @@
         "title": "Targeted Account Containment",
         "description": "Disable compromised accounts in AD. Force logoff all active sessions. Issue new credentials via out-of-band channel. Review account's group memberships and recent permission changes.",
         "auto": false,
-        "mcp_tools": ["ldap_user_lookup"],
+        "mcp_tools": [],
         "condition_field": null,
         "branches": [],
         "default_goto": "ct_step_3",
@@ -300,9 +300,9 @@
       {
         "step_id": "c2_step_1",
         "title": "C2 Infrastructure Identification",
-        "description": "Query VirusTotal, OTX, and Shodan for the beacon destination IP. Identify associated domains, hosting ASN, and known threat actor infrastructure. Determine beacon protocol (HTTP, HTTPS, DNS, SMB).",
+        "description": "Query VirusTotal and AbuseIPDB (via Tines) for the beacon destination IP. Identify associated domains, hosting ASN, and known threat infrastructure. Determine beacon protocol (HTTP, HTTPS, DNS, SMB).",
         "auto": true,
-        "mcp_tools": ["vt_ip_report", "otx_indicator"],
+        "mcp_tools": ["vt_ip_report", "abuseipdb_check_ip"],
         "condition_field": "c2_score",
         "branches": [
           {"when": "gte:70", "goto": "c2_step_2_high", "label": "Known malicious C2 infrastructure"},

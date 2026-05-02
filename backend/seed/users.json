@@ -6,6 +6,12 @@
     "password": "Demo1234!"
   },
   {
+    "email": "analyst.torres@corp.local",
+    "full_name": "Marco Torres",
+    "role": "analyst",
+    "password": "Demo1234!"
+  },
+  {
     "email": "lead.reyes@corp.local",
     "full_name": "Reyes Lead",
     "role": "tier2",

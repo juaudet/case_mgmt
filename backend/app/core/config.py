@@ -24,8 +24,15 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
-    MCP_SERVER_URL: str = "http://localhost:8001"
+    TINES_WEBHOOK_URL: str = ""
+    TINES_MCP_URL: str = ""  # legacy alias if TINES_WEBHOOK_URL is empty
+    TINES_VT_TOOL: str = "search_for_files_urls_domains_ips_and_comments"
+    TINES_ABUSEIPDB_CHECK_TOOL: str = "search_for_an_ip_address"
+    TINES_ABUSEIPDB_REPORTS_TOOL: str = "get_reports_for_an_ip_address"
     DEMO_MODE: bool = True
+    # Periodic synthetic cases (requires DEMO_MODE). Set false to load demo seed only.
+    MOCK_INCIDENT_FEED: bool = True
+
 
     @model_validator(mode="before")
     @classmethod
