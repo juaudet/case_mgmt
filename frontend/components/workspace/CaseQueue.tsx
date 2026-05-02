@@ -3,17 +3,11 @@ import { useState, useRef, useEffect } from 'react'
 import { useCases, usePlaybooks } from '@/lib/api'
 import type { CaseListItem } from '@/types'
 
-const SEVERITY_BORDER: Record<string, string> = {
-  critical: 'border-l-severity-critical',
-  high:     'border-l-severity-high',
-  medium:   'border-l-severity-medium',
-  low:      'border-l-severity-low',
-}
-const SEVERITY_TEXT: Record<string, string> = {
-  critical: 'text-severity-critical',
-  high:     'text-severity-high',
-  medium:   'text-severity-medium',
-  low:      'text-severity-low',
+const SEVERITY_COLOR: Record<string, string> = {
+  critical: '#f85149',
+  high:     '#f0883e',
+  medium:   '#eab308',
+  low:      '#3fb950',
 }
 
 function QueueCard({
@@ -32,9 +26,9 @@ function QueueCard({
     <button
       ref={cardRef}
       onClick={onClick}
+      style={{ borderLeftColor: SEVERITY_COLOR[item.severity] }}
       className={[
         'w-full text-left rounded border border-subtle border-l-2 px-2 py-1.5 mb-1 transition-colors',
-        SEVERITY_BORDER[item.severity],
         selected ? 'bg-elevated' : 'bg-panel hover:bg-elevated/60',
         isCritical ? 'animate-critical-pulse' : '',
       ].join(' ')}
@@ -43,7 +37,7 @@ function QueueCard({
         <span className={`font-mono text-[10px] font-semibold ${selected ? 'text-primary' : 'text-muted'}`}>
           {item.case_number}
         </span>
-        <span className={`font-mono text-[8px] uppercase ${SEVERITY_TEXT[item.severity]}`}>
+        <span style={{ color: SEVERITY_COLOR[item.severity] }} className="font-mono text-[8px] uppercase">
           {item.severity.slice(0, 4)}
         </span>
       </div>
@@ -105,10 +99,14 @@ export function CaseQueue({
       {playbooks.length > 0 && (
         <div className="flex-shrink-0 border-t border-subtle px-2 py-2">
           <p className="font-mono text-[9px] text-accent-blue tracking-widest mb-1">PLAYBOOKS</p>
-          {playbooks.slice(0, 4).map((pb: { id: string; name: string }) => (
-            <p key={pb.id} className="font-mono text-[9px] text-muted hover:text-accent-blue cursor-pointer mb-0.5 truncate">
+          {playbooks.slice(0, 4).map((pb) => (
+            <button
+              key={pb.id}
+              type="button"
+              className="w-full text-left font-mono text-[9px] text-muted hover:text-accent-blue mb-0.5 truncate"
+            >
               → {pb.name}
-            </p>
+            </button>
           ))}
         </div>
       )}
