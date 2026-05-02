@@ -4,10 +4,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from pydantic import BaseModel
 
-from app.core.deps import get_current_user, get_db
-from app.models.playbook import Playbook, PlaybookExecutionState, StepCompleteRequest
 from app.auth.models import UserInDB
-from app.services.playbook_engine import advance_playbook
+from app.core.deps import get_current_user, get_db
+from app.playbooks.engine import advance_playbook
+from app.playbooks.models import Playbook, PlaybookExecutionState, StepCompleteRequest
 
 router = APIRouter()
 

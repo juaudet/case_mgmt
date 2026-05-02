@@ -1,6 +1,6 @@
 from bson import ObjectId
 
-from app.models.playbook import Branch
+from app.playbooks.models import Branch
 
 
 def evaluate_branch(
