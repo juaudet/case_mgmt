@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useCases, usePlaybooks } from '@/lib/api'
 import type { CaseListItem } from '@/types'
+import { animateSpringEntrance } from '@/lib/animations'
 
 const SEVERITY_COLOR: Record<string, string> = {
   critical: '#f85149',
@@ -66,7 +67,11 @@ export function CaseQueue({
 
   // spring entrance animation wired in Task 13
   useEffect(() => {
-    prevCountRef.current = filtered.length
+    const current = filtered.length
+    if (current > prevCountRef.current && firstCardRef.current) {
+      animateSpringEntrance(firstCardRef.current)
+    }
+    prevCountRef.current = current
   }, [filtered.length])
 
   return (

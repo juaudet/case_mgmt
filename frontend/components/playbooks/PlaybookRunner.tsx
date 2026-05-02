@@ -1,7 +1,9 @@
 'use client'
+import { useRef, useEffect } from 'react'
 import type { Case, PlaybookStep, Playbook } from '@/types'
 import { CheckCircle, Circle, Cpu, Wrench } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { animateProgressBar } from '@/lib/animations'
 
 export function PlaybookRunner({
   playbook,
@@ -15,6 +17,20 @@ export function PlaybookRunner({
   const state = caseData.playbook_state
   const currentStepId = state?.current_step_id
   const completed = state?.completed_steps ?? []
+
+  const completedCount = completed.length
+  const totalSteps = playbook.steps.length ?? 1
+  const pct = Math.round((completedCount / (totalSteps || 1)) * 100)
+
+  const barRef = useRef<HTMLDivElement>(null)
+  const labelRef = useRef<HTMLSpanElement>(null)
+
+  useEffect(() => {
+    if (barRef.current && labelRef.current) {
+      animateProgressBar(barRef.current, labelRef.current, pct)
+    }
+  }, [pct])
+
   const phases = [
     { title: 'Phase 1 — Initial triage & scoping', steps: playbook.steps.slice(0, 4) },
     { title: 'Phase 2 — Containment', steps: playbook.steps.slice(4, 8) },
@@ -39,6 +55,15 @@ export function PlaybookRunner({
         {playbook.description && (
           <p className="mt-3 max-w-3xl text-[12px] leading-5 text-[#C9C3B4]">{playbook.description}</p>
         )}
+        <div className="mb-3 px-3 pt-2">
+          <div className="flex justify-between items-center mb-1">
+            <span className="font-mono text-[9px] text-muted">Progress</span>
+            <span ref={labelRef} className="font-mono text-[9px] text-accent-blue font-bold">0%</span>
+          </div>
+          <div className="h-1 bg-elevated rounded overflow-hidden">
+            <div ref={barRef} className="h-1 bg-accent-blue rounded" style={{ width: '0%' }} />
+          </div>
+        </div>
       </div>
 
       {phases.map((phase) => {
