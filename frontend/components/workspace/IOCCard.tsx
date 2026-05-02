@@ -1,6 +1,7 @@
 'use client'
 import { useRef, useEffect } from 'react'
 import type { IOCRef } from '@/types'
+import { animateCounter } from '@/lib/animations'
 
 function iocSeverity(score?: number): 'malicious' | 'suspicious' | 'clean' | 'unknown' {
   if (score === undefined) return 'unknown'
@@ -24,8 +25,17 @@ export function IOCCard({ ioc }: { ioc: IOCRef }) {
 
   // anime.js animations wired in Task 11
   useEffect(() => {
-    if (typeof window === 'undefined') return
-  }, [])
+    if (ioc.score === undefined) return
+    if (scoreRef.current) {
+      animateCounter(scoreRef.current, ioc.score)
+    }
+    if (barRef.current) {
+      import('animejs/lib/anime.es.js').then(mod => {
+        const anime = (mod.default ?? mod) as any
+        anime({ targets: barRef.current, width: [0, ioc.score!], duration: 1200, easing: 'easeOutExpo' })
+      })
+    }
+  }, [ioc.score])
 
   return (
     <div className={`rounded border ${styles.card} p-2 flex flex-col gap-1`}>
