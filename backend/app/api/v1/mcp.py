@@ -3,7 +3,7 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 from pydantic import BaseModel, Field
 
 from app.core.deps import get_current_user, get_db
-from app.models.user import UserInDB
+from app.auth.models import UserInDB
 from app.services.mcp_case_service import get_mcp_state, run_case_tool
 
 router = APIRouter()

@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 from app.core.deps import get_current_user, get_db
 from app.models.playbook import Playbook, PlaybookExecutionState, StepCompleteRequest
-from app.models.user import UserInDB
+from app.auth.models import UserInDB
 from app.services.playbook_engine import advance_playbook
 
 router = APIRouter()

@@ -1,7 +1,7 @@
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
+from app.auth.models import UserInDB
 from app.core.security import hash_password, verify_password
-from app.models.user import UserInDB
 
 
 async def get_user_by_email(db: AsyncIOMotorDatabase, email: str) -> UserInDB | None:

@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 from app.core.deps import get_current_user, get_db, require_role
 from app.models.case import Case, CaseCreate, CaseListItem, CaseUpdate, IOCRef, TimelineEvent
-from app.models.user import Role, UserInDB
+from app.auth.models import Role, UserInDB
 from app.services import case_service
 from app.services.source_parsers import parse_provider_incident
 
@@ -50,6 +50,14 @@ async def ingest_case(
         case_data, parsed_iocs = parse_provider_incident(provider, body.payload)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+    if not parsed_iocs:
+        parsed_iocs = [
+            IOCRef(
+                type="domain",
+                value="no-iocs-in-source.invalid",
+                label="No structured IOCs in provider payload",
+            )
+        ]
     created_case = await case_service.create_case(db, case_data, created_by=current_user.email)
     enriched_case = created_case
     for ioc in parsed_iocs:

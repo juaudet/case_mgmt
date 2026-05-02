@@ -2,6 +2,7 @@ from fastapi import APIRouter, Cookie, Depends, HTTPException, Response
 from fastapi.security import OAuth2PasswordRequestForm
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
+from app.auth.models import TokenResponse, UserPublic
 from app.core.config import settings
 from app.core.deps import get_current_user, get_db, get_redis
 from app.core.security import (
@@ -10,7 +11,6 @@ from app.core.security import (
     decode_token,
     verify_password,
 )
-from app.auth.models import TokenResponse, UserPublic
 
 router = APIRouter()
 

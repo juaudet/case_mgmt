@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordBearer
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.core.security import decode_token
-from app.models.user import Role, UserInDB
+from app.auth.models import Role, UserInDB
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
