@@ -55,7 +55,7 @@ async def test_mcp_run_persists_demo_result(
             }
         }
 
-    monkeypatch.setattr("app.services.mcp_case_service.call_mcp_tool", fake_call)
+    monkeypatch.setattr("app.mcp.service.call_mcp_tool", fake_call)
 
     resp = await async_client.post(
         f"/api/v1/cases/{case_id}/mcp/run",
@@ -95,7 +95,7 @@ async def test_mcp_run_missing_case_does_not_call_mcp(
         called = True
         return {}
 
-    monkeypatch.setattr("app.services.mcp_case_service.call_mcp_tool", fake_call)
+    monkeypatch.setattr("app.mcp.service.call_mcp_tool", fake_call)
 
     resp = await async_client.post(
         f"/api/v1/cases/{MISSING_CASE_ID}/mcp/run",
@@ -120,7 +120,7 @@ async def test_mcp_run_rejects_missing_required_params_before_mcp_call(
         called = True
         return {}
 
-    monkeypatch.setattr("app.services.mcp_case_service.call_mcp_tool", fake_call)
+    monkeypatch.setattr("app.mcp.service.call_mcp_tool", fake_call)
 
     resp = await async_client.post(
         f"/api/v1/cases/{case_id}/mcp/run",
@@ -149,7 +149,7 @@ async def test_mcp_run_benign_vt_result_persists_call_without_findings(
             }
         }
 
-    monkeypatch.setattr("app.services.mcp_case_service.call_mcp_tool", fake_call)
+    monkeypatch.setattr("app.mcp.service.call_mcp_tool", fake_call)
 
     resp = await async_client.post(
         f"/api/v1/cases/{case_id}/mcp/run",
@@ -166,32 +166,29 @@ async def test_mcp_run_benign_vt_result_persists_call_without_findings(
 
 
 @pytest.mark.asyncio
-async def test_mcp_run_normalizes_crowdstrike_ioc_search(
+async def test_mcp_run_abuseipdb_high_score_creates_finding(
     async_client: AsyncClient, analyst_token: str, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     case_id = await _create_case(async_client, analyst_token)
 
     async def fake_call(tool_name: str, params: dict) -> dict:
-        return {
-            "hosts_scanned": 12,
-            "hash_detections": 2,
-            "suspicious_activity": 3,
-        }
+        assert tool_name == "abuseipdb_check_ip"
+        return {"data": {"abuseConfidenceScore": 82}}
 
-    monkeypatch.setattr("app.services.mcp_case_service.call_mcp_tool", fake_call)
+    monkeypatch.setattr("app.mcp.service.call_mcp_tool", fake_call)
 
     resp = await async_client.post(
         f"/api/v1/cases/{case_id}/mcp/run",
-        json={"tool_name": "cs_ioc_search", "params": {"indicator": "abc123"}},
+        json={"tool_name": "abuseipdb_check_ip", "params": {"ip": "203.0.113.10"}},
         headers={"Authorization": f"Bearer {analyst_token}"},
     )
 
     assert resp.status_code == 200
     body = resp.json()
-    assert body["call"]["provider"] == "CrowdStrike"
-    assert body["call"]["result_summary"]["hosts_scanned"] == 12
-    assert body["findings"][0]["source"] == "CrowdStrike"
-    assert body["findings"][0]["title"] == "IOC hunt completed"
+    assert body["call"]["provider"] == "AbuseIPDB"
+    assert body["call"]["result_summary"]["abuse_confidence_score"] == 82
+    assert body["findings"][0]["source"] == "AbuseIPDB"
+    assert body["findings"][0]["title"] == "IP flagged by AbuseIPDB"
     assert len(body["mcp_findings"]) == 1
 
 
@@ -204,7 +201,7 @@ async def test_mcp_run_persists_failed_call_without_findings(
     async def fake_call(tool_name: str, params: dict) -> dict:
         raise RuntimeError("sidecar unavailable")
 
-    monkeypatch.setattr("app.services.mcp_case_service.call_mcp_tool", fake_call)
+    monkeypatch.setattr("app.mcp.service.call_mcp_tool", fake_call)
 
     resp = await async_client.post(
         f"/api/v1/cases/{case_id}/mcp/run",
