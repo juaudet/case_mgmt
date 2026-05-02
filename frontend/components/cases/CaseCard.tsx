@@ -6,7 +6,7 @@ import { relativeTime } from '@/lib/utils'
 
 export function CaseCard({ case: c }: { case: CaseListItem }) {
   return (
-    <Link href={`/cases/${c.id}`}>
+    <Link href={`/dashboard?case=${c.id}`}>
       <div className="bg-[#162030] border border-[#1E3048] rounded-lg p-4 hover:border-blue-700 hover:bg-[#1A2A3E] transition cursor-pointer">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">

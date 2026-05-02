@@ -18,16 +18,16 @@ export function ContextToggles({
 }) {
   return (
     <div>
-      <p className="text-xs uppercase tracking-[0.2em] text-[#9B9A92] mb-2">Context sources</p>
-      <div className="flex flex-wrap gap-2">
+      <p className="font-mono text-[8px] text-dim uppercase tracking-widest mb-1">Context</p>
+      <div className="flex flex-wrap gap-1">
         {(Object.keys(CONTEXT_LABELS) as Array<keyof typeof CONTEXT_LABELS>).map((key) => (
           <button
             key={key}
             onClick={() => onChange({ ...flags, [key]: !flags[key] })}
-            className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+            className={`font-mono text-[8px] px-1.5 py-0.5 rounded transition ${
               flags[key]
-                ? 'bg-[#DFF0CC] border-[#97C459] text-[#3B6D11]'
-                : 'bg-[#2D2D2A] border-[#464641] text-[#9B9A92]'
+                ? 'bg-accent-blue text-white'
+                : 'bg-elevated text-muted hover:text-primary'
             }`}
             type="button"
           >

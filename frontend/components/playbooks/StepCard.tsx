@@ -1,8 +1,9 @@
 'use client'
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import type { PlaybookStep } from '@/types'
-import { CheckCircle, Circle, ChevronRight } from 'lucide-react'
+import { Circle, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { animateCheckmark } from '@/lib/animations'
 
 interface StepCardProps {
   step: PlaybookStep
@@ -14,6 +15,13 @@ interface StepCardProps {
 export function StepCard({ step, isDone, isCurrent, onComplete }: StepCardProps) {
   const [expanded, setExpanded] = useState(isCurrent)
   const [resultInput, setResultInput] = useState('')
+  const checkRef = useRef<SVGPolylineElement>(null)
+
+  useEffect(() => {
+    if (isDone && checkRef.current) {
+      animateCheckmark(checkRef.current)
+    }
+  }, [isDone])
 
   return (
     <div
@@ -31,7 +39,16 @@ export function StepCard({ step, isDone, isCurrent, onComplete }: StepCardProps)
         className="w-full flex items-center gap-3 px-4 py-3 text-left"
       >
         {isDone ? (
-          <CheckCircle className="w-4 h-4 text-green-400 shrink-0" />
+          <svg viewBox="0 0 12 12" className="w-4 h-4 flex-shrink-0">
+            <polyline
+              ref={checkRef}
+              points="2,6 5,9 10,3"
+              stroke="#3fb950"
+              strokeWidth="2"
+              fill="none"
+              strokeLinecap="round"
+            />
+          </svg>
         ) : (
           <Circle className="w-4 h-4 text-slate-500 shrink-0" />
         )}

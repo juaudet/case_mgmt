@@ -34,12 +34,17 @@ describe('CaseCard', () => {
     render(<CaseCard case={mockCase} />)
     expect(screen.getByText('Credential Stuffing')).toBeInTheDocument()
   })
-  it('renders IOC count', () => {
+  it('renders compact SIEM metadata labels', () => {
     render(<CaseCard case={mockCase} />)
-    expect(screen.getByText('3 IOCs')).toBeInTheDocument()
+    expect(screen.getByText('ASSIGNEE')).toBeInTheDocument()
+    expect(screen.getByText('CREATED')).toBeInTheDocument()
   })
-  it('links to case detail page', () => {
+  it('shows Unassigned fallback', () => {
+    render(<CaseCard case={{ ...mockCase, assigned_to: undefined }} />)
+    expect(screen.getByText('Unassigned')).toBeInTheDocument()
+  })
+  it('links to workspace with case param', () => {
     render(<CaseCard case={mockCase} />)
-    expect(screen.getByRole('link')).toHaveAttribute('href', '/cases/abc123')
+    expect(screen.getByRole('link')).toHaveAttribute('href', '/dashboard?case=abc123')
   })
 })
