@@ -1,7 +1,7 @@
 import pytest
 
 from app.core.config import Settings
-from app.services.tines_mcp_bridge import resolve_tines_invocation
+from app.enrichment.tines_mcp_bridge import resolve_tines_invocation
 
 
 @pytest.fixture
