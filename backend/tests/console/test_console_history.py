@@ -113,8 +113,10 @@ async def test_console_history_is_multi_turn(
         nonlocal call_count
         result = responses[min(call_count, len(responses) - 1)]
         call_count += 1
+        if call_count == 1:
+            assert len(kwargs["messages"]) == 2  # system + first user message
         if call_count == 2:
-            assert len(kwargs["messages"]) == 4
+            assert len(kwargs["messages"]) == 4  # system + user1 + assistant1 + user2
         return result
 
     monkeypatch.setattr("app.console.router.AsyncOpenAI", lambda api_key: MagicMock(
@@ -140,7 +142,8 @@ async def test_console_history_is_multi_turn(
 
 @pytest.mark.asyncio
 async def test_tool_call_recorded_in_mcp_calls(
-    async_client: AsyncClient, analyst_token: str, monkeypatch: pytest.MonkeyPatch
+    async_client: AsyncClient, analyst_token: str, monkeypatch: pytest.MonkeyPatch,
+    test_db
 ) -> None:
     case_id = await _create_case(async_client, analyst_token)
 
@@ -190,14 +193,10 @@ async def test_tool_call_recorded_in_mcp_calls(
     assert turn["tool_calls_used"][0]["result_summary"]["abuse_confidence_score"] == 90
 
     from bson import ObjectId
-    from motor.motor_asyncio import AsyncIOMotorClient
-    client = AsyncIOMotorClient("mongodb://localhost:27017")
-    db = client["siem_test"]
-    doc = await db.cases.find_one({"_id": ObjectId(case_id)})
+    doc = await test_db.cases.find_one({"_id": ObjectId(case_id)})
     assert len(doc.get("mcp_calls", [])) >= 1
     assert doc["mcp_calls"][0]["tool_name"] == "search_for_an_ip_address"
     assert len(doc.get("mcp_findings", [])) >= 1
-    client.close()
 
 
 @pytest.mark.asyncio
@@ -221,6 +220,10 @@ async def test_tines_unavailable_returns_graceful_response(
     ))
     monkeypatch.setattr("app.console.router._get_openai_api_key", lambda: "sk-test")
     monkeypatch.setattr("app.console.router._tines_url", lambda: "")
+    monkeypatch.setattr(
+        "app.console.router.tines_call_tool",
+        AsyncMock(side_effect=AssertionError("tines_call_tool should not be called when URL is empty")),
+    )
 
     resp = await async_client.post(
         f"/api/v1/cases/{case_id}/console/prompt",
@@ -229,6 +232,10 @@ async def test_tines_unavailable_returns_graceful_response(
     )
     assert resp.status_code == 200
     assert "proceed" in resp.json()["turn"]["response"].lower()
+    turn = resp.json()["turn"]
+    # Tool call was attempted (OpenAI requested it) but Tines was skipped — error recorded in summary
+    assert len(turn["tool_calls_used"]) == 1
+    assert "error" in turn["tool_calls_used"][0]["result_summary"]
 
 
 @pytest.mark.asyncio
@@ -260,3 +267,4 @@ async def test_loop_guard_exits_after_max_iterations(
     assert resp.status_code == 200
     turn = resp.json()["turn"]
     assert len(turn["tool_calls_used"]) == 5
+    assert "Max tool iterations" in turn["response"]
