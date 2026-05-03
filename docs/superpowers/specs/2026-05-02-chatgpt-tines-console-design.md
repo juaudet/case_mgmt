@@ -172,6 +172,55 @@ AI-triggered Tines calls are also written to the case's `mcp_calls` and `mcp_fin
 
 ---
 
+## Tool Result Summarization
+
+The full raw Tines response is passed back to ChatGPT so it can reason over all fields. A compact `result_summary` is also extracted for storage in `tool_calls_used` and `mcp_calls`.
+
+**VirusTotal (`search_for_files_urls_domains_ips_and_comments`)**
+
+Response shape: `{"data": [{"attributes": {...}}]}`
+
+Extract from `data[0].attributes`:
+
+```python
+{
+    "sha256": attributes["sha256"],
+    "meaningful_name": attributes.get("meaningful_name"),
+    "malicious": attributes["last_analysis_stats"]["malicious"],
+    "suspicious": attributes["last_analysis_stats"]["suspicious"],
+    "suggested_threat_label": attributes
+        .get("popular_threat_classification", {})
+        .get("suggested_threat_label"),
+    "sandbox_verdicts": [
+        name for name, v in attributes.get("sandbox_verdicts", {}).items()
+        if v.get("category") == "malicious"
+    ],
+}
+```
+
+Example (WannaCry): `{"sha256": "24d004...", "malicious": 69, "suspicious": 0, "suggested_threat_label": "trojan.wannacry/wanna", "sandbox_verdicts": ["Tencent HABO", "C2AE", "Zenbox", ...]}`
+
+**AbuseIPDB (`search_for_an_ip_address`)**
+
+```python
+{
+    "abuse_confidence_score": data.get("data", {}).get("abuseConfidenceScore", 0),
+    "country_code": data.get("data", {}).get("countryCode"),
+    "is_tor": data.get("data", {}).get("isTor", False),
+}
+```
+
+**AbuseIPDB Reports (`get_reports_for_an_ip_address`)**
+
+```python
+{
+    "total_reports": data.get("data", {}).get("totalReports", 0),
+    "abuse_confidence_score": data.get("data", {}).get("abuseConfidenceScore", 0),
+}
+```
+
+---
+
 ## Config Changes
 
 **Added:**
