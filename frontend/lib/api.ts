@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useSession } from 'next-auth/react'
+import { useState, useCallback } from 'react'
 import type { Case, CaseListItem, ConsoleHistoryTurn, MCPState, Playbook } from '@/types'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
@@ -134,24 +135,72 @@ export function useConsoleHistory(caseId: string) {
   })
 }
 
-export function useSubmitConsolePrompt(caseId: string) {
+async function* _streamConsoleEvents(
+  url: string,
+  headers: Record<string, string>,
+  body: object
+): AsyncGenerator<import('@/types').ConsoleSSEEvent> {
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...headers },
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) throw new Error(`API error ${res.status}`)
+  const reader = res.body!.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    buffer += decoder.decode(value, { stream: true })
+    const lines = buffer.split('\n')
+    buffer = lines.pop() ?? ''
+    for (const line of lines) {
+      if (!line.startsWith('data: ')) continue
+      const data = line.slice(6).trim()
+      if (!data) continue
+      try {
+        yield JSON.parse(data) as import('@/types').ConsoleSSEEvent
+      } catch {
+        // ignore malformed lines
+      }
+    }
+  }
+}
+
+export function useStreamConsolePrompt(caseId: string) {
   const headers = useAuthHeaders()
   const qc = useQueryClient()
-  return useMutation({
-    mutationFn: (data: {
-      prompt: string
-      template?: string
-      context_flags: Record<string, boolean>
-    }) =>
-      apiFetch(`/api/v1/cases/${caseId}/console/prompt`, headers, {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['case', caseId] })
-      qc.invalidateQueries({ queryKey: ['case', caseId, 'console-history'] })
+  const [isPending, setIsPending] = useState(false)
+  const [activeToolCall, setActiveToolCall] = useState<string | null>(null)
+  const [streamingText, setStreamingText] = useState('')
+
+  const submit = useCallback(
+    async (data: { prompt: string; template?: string; context_flags: Record<string, boolean> }) => {
+      setIsPending(true)
+      setStreamingText('')
+      setActiveToolCall(null)
+      try {
+        const url = `${API_URL}/api/v1/cases/${caseId}/console/stream`
+        for await (const event of _streamConsoleEvents(url, headers, data)) {
+          if (event.type === 'tool_call') setActiveToolCall(event.tool)
+          if (event.type === 'tool_result') setActiveToolCall(null)
+          if (event.type === 'delta') setStreamingText((prev) => prev + event.text)
+          if (event.type === 'done') {
+            qc.invalidateQueries({ queryKey: ['case', caseId, 'console-history'] })
+            qc.invalidateQueries({ queryKey: ['case', caseId] })
+          }
+          if (event.type === 'error') throw new Error(event.message)
+        }
+      } finally {
+        setIsPending(false)
+        setActiveToolCall(null)
+      }
     },
-  })
+    [caseId, headers, qc]
+  )
+
+  return { submit, isPending, activeToolCall, streamingText }
 }
 
 export function useCompletePlaybookStep(caseId: string) {

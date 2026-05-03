@@ -39,6 +39,19 @@ export interface MCPFinding {
   created_at: string
 }
 
+export interface ToolCallRecord {
+  tool: string
+  args: Record<string, unknown>
+  result_summary: Record<string, unknown>
+}
+
+export type ConsoleSSEEvent =
+  | { type: 'tool_call'; tool: string; args: Record<string, unknown>; status: 'running' }
+  | { type: 'tool_result'; tool: string; status: 'done' }
+  | { type: 'delta'; text: string }
+  | { type: 'done' }
+  | { type: 'error'; message: string }
+
 export interface ConsoleHistoryTurn {
   id: string
   prompt: string
@@ -46,6 +59,7 @@ export interface ConsoleHistoryTurn {
   template?: string | null
   context_flags: Record<string, boolean>
   sources_used: string[]
+  tool_calls_used: ToolCallRecord[]
   created_at: string
   actor: string
 }
