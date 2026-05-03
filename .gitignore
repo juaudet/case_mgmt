@@ -59,3 +59,4 @@ htmlcov/
 # Local secret/config helpers
 mcp-server/secret_env.py
 backend/app/core/secrets.py
+.worktrees/
