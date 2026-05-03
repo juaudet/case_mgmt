@@ -4,13 +4,13 @@ services:
     ports:
       - '3000:3000'
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:8000
-      AUTH_API_URL: http://backend:8000
-      NEXTAUTH_URL: http://localhost:3000
+      # Set NEXT_PUBLIC_API_URL and NEXTAUTH_URL to your Railway backend/frontend URLs
+      # before deploying. They must be real URLs — Next.js bakes NEXT_PUBLIC_* at build time.
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+      AUTH_API_URL: ${AUTH_API_URL:-http://backend:8000}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
       AUTH_TRUST_HOST: 'true'
-      NEXTAUTH_SECRET_FILE: /run/secrets/nextauth_secret
-    volumes:
-      - ./.secrets:/run/secrets:ro
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-}
     depends_on:
       - backend
 
@@ -19,16 +19,15 @@ services:
     ports:
       - '8000:8000'
     environment:
-      MONGODB_URL: mongodb://mongo:27017
-      REDIS_URL: redis://redis:6379
-      JWT_SECRET_KEY_FILE: /run/secrets/jwt_secret
+      MONGODB_URL: ${MONGODB_URL:-mongodb://mongo:27017}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-}
       DEMO_MODE: 'true'
       MOCK_INCIDENT_FEED: 'true'
-      ANTHROPIC_API_KEY_FILE: /run/secrets/anthropic_api_key
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o}
       # Enrichment calls Tines directly (no MCP sidecar required for the API).
-      TINES_WEBHOOK_URL: https://<YOUR-TINES-TENANT>.tines.com/mcp/<YOUR-TOKEN>
-    volumes:
-      - ./.secrets:/run/secrets:ro
+      TINES_WEBHOOK_URL: ${TINES_WEBHOOK_URL:-}
     depends_on:
       - mongo
       - redis
@@ -39,10 +38,7 @@ services:
       - '8001:8001'
     environment:
       DEMO_MODE: 'true'
-      # Tines tools/call webhook (TINES_MCP_URL is still accepted as an alias in tines_client).
-      TINES_WEBHOOK_URL: https://<YOUR-TINES-TENANT>.tines.com/mcp/<YOUR-TOKEN>
-    volumes:
-      - ./.secrets:/run/secrets:ro
+      TINES_WEBHOOK_URL: ${TINES_WEBHOOK_URL:-}
 
   mongo:
     image: mongo:7
