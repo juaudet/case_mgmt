@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from openai import AsyncOpenAI
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.auth.models import UserInDB
 from app.cases.service import get_case
@@ -107,7 +107,7 @@ PROMPT_TEMPLATES = {
 class ConsolePromptRequest(BaseModel):
     prompt: str
     template: str | None = None
-    context_flags: dict = {}
+    context_flags: dict = Field(default_factory=dict)
 
 
 def _get_openai_api_key() -> str:
@@ -128,7 +128,7 @@ def _tines_url() -> str:
 
 def _build_messages(history: list[dict], system_prompt: str, prompt: str) -> list[dict]:
     messages: list[dict] = [{"role": "system", "content": system_prompt}]
-    for turn in reversed(history):
+    for turn in reversed(history):  # history is stored newest-first; reverse for chronological order
         messages.append({"role": "user", "content": turn["prompt"]})
         messages.append({"role": "assistant", "content": turn["response"]})
     messages.append({"role": "user", "content": prompt})
@@ -318,14 +318,19 @@ async def stream_console(
                 )
 
                 for tc in msg.tool_calls:
-                    args = json.loads(tc.function.arguments)
+                    try:
+                        args = json.loads(tc.function.arguments)
+                    except json.JSONDecodeError:
+                        args = {}
                     yield f"data: {json.dumps({'type': 'tool_call', 'tool': tc.function.name, 'args': args, 'status': 'running'})}\n\n"
 
-                    raw = (
-                        await tines_call_tool(tines_url, tc.function.name, args)
-                        if tines_url
-                        else {"error": "Tines MCP URL not configured"}
-                    )
+                    if tines_url:
+                        try:
+                            raw = await tines_call_tool(tines_url, tc.function.name, args)
+                        except Exception as exc:
+                            raw = {"error": str(exc)}
+                    else:
+                        raw = {"error": "Tines MCP URL not configured"}
                     summary = summarize_tool_result(tc.function.name, raw)
                     tool_calls_used.append(
                         {"tool": tc.function.name, "args": args, "result_summary": summary}
@@ -340,6 +345,8 @@ async def stream_console(
                             "content": json.dumps(raw),
                         }
                     )
+            else:
+                response_text = "[Max tool iterations reached without a final response.]"
 
             turn = {
                 "id": str(uuid4()),
@@ -352,10 +359,13 @@ async def stream_console(
                 "created_at": now,
                 "actor": current_user.email,
             }
-            await db.cases.update_one(
+            result = await db.cases.update_one(
                 {"_id": _case_object_id(case_id)},
                 _build_db_update(turn, tool_calls_used, all_findings, now, current_user.email),
             )
+            if result.matched_count == 0:
+                yield f"data: {json.dumps({'type': 'error', 'message': 'Case not found during save'})}\n\n"
+                return
             yield f"data: {json.dumps({'type': 'done'})}\n\n"
 
         except Exception as exc:
@@ -435,16 +445,23 @@ async def create_console_prompt(
             }
         )
         for tc in msg.tool_calls:
-            args = json.loads(tc.function.arguments)
-            raw = (
-                await tines_call_tool(tines_url, tc.function.name, args)
-                if tines_url
-                else {"error": "Tines MCP URL not configured"}
-            )
+            try:
+                args = json.loads(tc.function.arguments)
+            except json.JSONDecodeError:
+                args = {}
+            if tines_url:
+                try:
+                    raw = await tines_call_tool(tines_url, tc.function.name, args)
+                except Exception as exc:
+                    raw = {"error": str(exc)}
+            else:
+                raw = {"error": "Tines MCP URL not configured"}
             summary = summarize_tool_result(tc.function.name, raw)
             tool_calls_used.append({"tool": tc.function.name, "args": args, "result_summary": summary})
             all_findings.extend(_normalize_findings(tc.function.name, summary, now))
             messages.append({"role": "tool", "tool_call_id": tc.id, "content": json.dumps(raw)})
+    else:
+        response_text = "[Max tool iterations reached without a final response.]"
 
     turn = {
         "id": str(uuid4()),
@@ -457,10 +474,12 @@ async def create_console_prompt(
         "created_at": now,
         "actor": current_user.email,
     }
-    await db.cases.update_one(
+    result = await db.cases.update_one(
         {"_id": _case_object_id(case_id)},
         _build_db_update(turn, tool_calls_used, all_findings, now, current_user.email),
     )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Case not found")
     return {"turn": turn}
 
 
