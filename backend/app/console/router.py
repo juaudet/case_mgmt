@@ -2,20 +2,75 @@ import json
 from datetime import datetime, timezone
 from uuid import uuid4
 
-import anthropic
 from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from motor.motor_asyncio import AsyncIOMotorDatabase
+from openai import AsyncOpenAI
 from pydantic import BaseModel
 
 from app.auth.models import UserInDB
 from app.cases.service import get_case
 from app.console.service import build_system_prompt
+from app.core.config import settings
 from app.core.deps import get_current_user, get_db
 from app.core.secrets import read_env_or_secret_file
+from app.enrichment.tines_client import call_tool as tines_call_tool
+from app.mcp.service import _case_object_id
 
 router = APIRouter()
+
+MAX_TOOL_ITERATIONS = 5
+
+TINES_TOOLS = [
+    {
+        "type": "function",
+        "function": {
+            "name": "search_for_files_urls_domains_ips_and_comments",
+            "description": "Search VirusTotal for a file hash, URL, domain, or IP address.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "Hash, IP, domain, or URL to look up",
+                    }
+                },
+                "required": ["query"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "search_for_an_ip_address",
+            "description": "Check an IP address against AbuseIPDB for abuse confidence score.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "ip_address": {"type": "string"},
+                    "max_age_in_days": {"type": "integer", "default": 30},
+                },
+                "required": ["ip_address"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_reports_for_an_ip_address",
+            "description": "Get detailed abuse reports for an IP address from AbuseIPDB.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "ip_address": {"type": "string"},
+                    "max_age_in_days": {"type": "integer", "default": 30},
+                },
+                "required": ["ip_address"],
+            },
+        },
+    },
+]
 
 PROMPT_TEMPLATES = {
     "attribution": (
@@ -55,68 +110,256 @@ class ConsolePromptRequest(BaseModel):
     context_flags: dict = {}
 
 
-def _get_anthropic_api_key() -> str:
+def _get_openai_api_key() -> str:
     try:
-        key = read_env_or_secret_file("ANTHROPIC_API_KEY", on_file_error="raise")
+        key = read_env_or_secret_file("OPENAI_API_KEY", on_file_error="raise")
     except RuntimeError as exc:
         raise HTTPException(
-            status_code=503,
-            detail="Anthropic API key file is not readable",
+            status_code=503, detail="OpenAI API key file is not readable"
         ) from exc
     if key:
         return key
-    raise HTTPException(
-        status_code=503,
-        detail="Anthropic API key is not configured",
-    )
+    raise HTTPException(status_code=503, detail="OpenAI API key is not configured")
 
 
-async def generate_console_response(prompt_text: str, system_prompt: str) -> str:
-    api_key = _get_anthropic_api_key()
-    client = anthropic.AsyncAnthropic(api_key=api_key)
-    message = await client.messages.create(
-        model="claude-sonnet-4-6",
-        max_tokens=1500,
-        system=system_prompt,
-        messages=[{"role": "user", "content": prompt_text}],
-    )
-    return "".join(
-        block.text for block in message.content if getattr(block, "type", None) == "text"
-    )
+def _tines_url() -> str:
+    return (settings.TINES_WEBHOOK_URL or settings.TINES_MCP_URL or "").strip()
+
+
+def _build_messages(history: list[dict], system_prompt: str, prompt: str) -> list[dict]:
+    messages: list[dict] = [{"role": "system", "content": system_prompt}]
+    for turn in reversed(history):
+        messages.append({"role": "user", "content": turn["prompt"]})
+        messages.append({"role": "assistant", "content": turn["response"]})
+    messages.append({"role": "user", "content": prompt})
+    return messages
+
+
+def summarize_tool_result(tool_name: str, raw: dict) -> dict:
+    if "error" in raw:
+        return {"error": raw["error"]}
+    if tool_name == "search_for_files_urls_domains_ips_and_comments":
+        data = raw.get("data", [])
+        attrs = data[0].get("attributes", {}) if isinstance(data, list) and data else {}
+        stats = attrs.get("last_analysis_stats", {})
+        return {
+            "sha256": attrs.get("sha256"),
+            "meaningful_name": attrs.get("meaningful_name"),
+            "malicious": stats.get("malicious", 0),
+            "suspicious": stats.get("suspicious", 0),
+            "suggested_threat_label": attrs.get(
+                "popular_threat_classification", {}
+            ).get("suggested_threat_label"),
+            "sandbox_verdicts": [
+                name
+                for name, v in attrs.get("sandbox_verdicts", {}).items()
+                if v.get("category") == "malicious"
+            ],
+        }
+    if tool_name == "search_for_an_ip_address":
+        d = raw.get("data", {})
+        return {
+            "ip_address": d.get("ipAddress"),
+            "abuse_confidence_score": d.get("abuseConfidenceScore", 0),
+            "country_code": d.get("countryCode"),
+            "isp": d.get("isp"),
+            "domain": d.get("domain"),
+            "is_tor": d.get("isTor", False),
+            "total_reports": d.get("totalReports", 0),
+            "num_distinct_users": d.get("numDistinctUsers", 0),
+            "last_reported_at": d.get("lastReportedAt"),
+        }
+    if tool_name == "get_reports_for_an_ip_address":
+        d = raw.get("data", {})
+        results = d.get("results", [])
+        return {
+            "total": d.get("total", 0),
+            "page": d.get("page", 1),
+            "last_page": d.get("lastPage", 1),
+            "sample_comments": [
+                r.get("comment", "")[:200] for r in results[:3] if r.get("comment")
+            ],
+            "categories_seen": sorted(
+                {cat for r in results for cat in r.get("categories", [])}
+            ),
+        }
+    return {}
+
+
+def _normalize_findings(tool_name: str, summary: dict, now: datetime) -> list[dict]:
+    if "error" in summary:
+        return []
+    if tool_name == "search_for_files_urls_domains_ips_and_comments":
+        if summary.get("malicious", 0) <= 0 and summary.get("suspicious", 0) <= 0:
+            return []
+        return [
+            {
+                "id": str(uuid4()),
+                "source": "VirusTotal",
+                "title": "VirusTotal signal detected",
+                "severity": "critical" if summary.get("malicious", 0) >= 10 else "medium",
+                "fields": summary,
+                "created_at": now,
+            }
+        ]
+    if tool_name == "search_for_an_ip_address":
+        score = summary.get("abuse_confidence_score", 0)
+        if score < 25:
+            return []
+        return [
+            {
+                "id": str(uuid4()),
+                "source": "AbuseIPDB",
+                "title": "IP flagged by AbuseIPDB",
+                "severity": "critical" if score >= 75 else "medium",
+                "fields": summary,
+                "created_at": now,
+            }
+        ]
+    return []
+
+
+def _build_db_update(
+    turn: dict,
+    tool_calls_used: list[dict],
+    all_findings: list[dict],
+    now: datetime,
+    actor: str,
+) -> dict:
+    update: dict = {
+        "$push": {"console_history": {"$each": [turn], "$position": 0}},
+        "$set": {"updated_at": now},
+    }
+    if all_findings:
+        update["$push"]["mcp_findings"] = {"$each": all_findings}
+    if tool_calls_used:
+        mcp_records = [
+            {
+                "id": str(uuid4()),
+                "provider": "Tines",
+                "tool_name": tc["tool"],
+                "params": tc["args"],
+                "status": "completed" if "error" not in tc["result_summary"] else "failed",
+                "duration_ms": 0,
+                "result_summary": tc["result_summary"],
+                "raw_result": {},
+                "created_at": now,
+                "actor": actor,
+            }
+            for tc in tool_calls_used
+        ]
+        update["$push"]["mcp_calls"] = {"$each": mcp_records}
+    return update
 
 
 @router.post("/cases/{case_id}/console/stream")
 async def stream_console(
     case_id: str,
     body: ConsolePromptRequest,
-    current_user=Depends(get_current_user),
-    db=Depends(get_db),
+    current_user: UserInDB = Depends(get_current_user),
+    db: AsyncIOMotorDatabase = Depends(get_db),
 ) -> StreamingResponse:
     case = await get_case(db, case_id)
     if not case:
         raise HTTPException(status_code=404, detail="Case not found")
 
-    prompt_text = body.prompt
-    if body.template and body.template in PROMPT_TEMPLATES:
-        prompt_text = PROMPT_TEMPLATES[body.template]
-
+    prompt_text = (
+        PROMPT_TEMPLATES[body.template]
+        if body.template and body.template in PROMPT_TEMPLATES
+        else body.prompt
+    )
     system_prompt = build_system_prompt(case, body.context_flags)
+    case_doc = await db.cases.find_one({"_id": _case_object_id(case_id)})
+    history: list[dict] = case_doc.get("console_history", []) if case_doc else []
+
+    api_key = _get_openai_api_key()
+    tines_url = _tines_url()
+    client = AsyncOpenAI(api_key=api_key)
 
     async def event_generator():
+        tool_calls_used: list[dict] = []
+        all_findings: list[dict] = []
+        response_text = ""
+        now = datetime.now(timezone.utc)
+
         try:
-            api_key = _get_anthropic_api_key()
-            client = anthropic.AsyncAnthropic(api_key=api_key)
-            async with client.messages.stream(
-                model="claude-sonnet-4-6",
-                max_tokens=1500,
-                system=system_prompt,
-                messages=[{"role": "user", "content": prompt_text}],
-            ) as stream:
-                async for text in stream.text_stream:
-                    yield f"data: {json.dumps({'delta': text})}\n\n"
-        except Exception as e:
-            yield f"data: {json.dumps({'error': str(e)})}\n\n"
-        yield "data: [DONE]\n\n"
+            messages = _build_messages(history, system_prompt, prompt_text)
+
+            for _ in range(MAX_TOOL_ITERATIONS):
+                completion = await client.chat.completions.create(
+                    model=settings.OPENAI_MODEL,
+                    messages=messages,
+                    tools=TINES_TOOLS,
+                    tool_choice="auto",
+                )
+                msg = completion.choices[0].message
+
+                if not msg.tool_calls:
+                    response_text = msg.content or ""
+                    yield f"data: {json.dumps({'type': 'delta', 'text': response_text})}\n\n"
+                    break
+
+                messages.append(
+                    {
+                        "role": "assistant",
+                        "content": msg.content,
+                        "tool_calls": [
+                            {
+                                "id": tc.id,
+                                "type": "function",
+                                "function": {
+                                    "name": tc.function.name,
+                                    "arguments": tc.function.arguments,
+                                },
+                            }
+                            for tc in msg.tool_calls
+                        ],
+                    }
+                )
+
+                for tc in msg.tool_calls:
+                    args = json.loads(tc.function.arguments)
+                    yield f"data: {json.dumps({'type': 'tool_call', 'tool': tc.function.name, 'args': args, 'status': 'running'})}\n\n"
+
+                    raw = (
+                        await tines_call_tool(tines_url, tc.function.name, args)
+                        if tines_url
+                        else {"error": "Tines MCP URL not configured"}
+                    )
+                    summary = summarize_tool_result(tc.function.name, raw)
+                    tool_calls_used.append(
+                        {"tool": tc.function.name, "args": args, "result_summary": summary}
+                    )
+                    all_findings.extend(_normalize_findings(tc.function.name, summary, now))
+
+                    yield f"data: {json.dumps({'type': 'tool_result', 'tool': tc.function.name, 'status': 'done'})}\n\n"
+                    messages.append(
+                        {
+                            "role": "tool",
+                            "tool_call_id": tc.id,
+                            "content": json.dumps(raw),
+                        }
+                    )
+
+            turn = {
+                "id": str(uuid4()),
+                "prompt": prompt_text,
+                "response": response_text,
+                "tool_calls_used": tool_calls_used,
+                "template": body.template,
+                "context_flags": body.context_flags,
+                "sources_used": [k for k, v in body.context_flags.items() if v],
+                "created_at": now,
+                "actor": current_user.email,
+            }
+            await db.cases.update_one(
+                {"_id": _case_object_id(case_id)},
+                _build_db_update(turn, tool_calls_used, all_findings, now, current_user.email),
+            )
+            yield f"data: {json.dumps({'type': 'done'})}\n\n"
+
+        except Exception as exc:
+            yield f"data: {json.dumps({'type': 'error', 'message': str(exc)})}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
@@ -131,7 +374,6 @@ async def get_console_history(
         object_id = ObjectId(case_id)
     except Exception:
         raise HTTPException(status_code=404, detail="Case not found")
-
     case = await db.cases.find_one({"_id": object_id})
     if not case:
         raise HTTPException(status_code=404, detail="Case not found")
@@ -149,33 +391,79 @@ async def create_console_prompt(
     if not case:
         raise HTTPException(status_code=404, detail="Case not found")
 
-    prompt_text = body.prompt
-    if body.template and body.template in PROMPT_TEMPLATES:
-        prompt_text = PROMPT_TEMPLATES[body.template]
-
+    prompt_text = (
+        PROMPT_TEMPLATES[body.template]
+        if body.template and body.template in PROMPT_TEMPLATES
+        else body.prompt
+    )
     system_prompt = build_system_prompt(case, body.context_flags)
-    response_text = await generate_console_response(prompt_text, system_prompt)
+    case_doc = await db.cases.find_one({"_id": _case_object_id(case_id)})
+    history: list[dict] = case_doc.get("console_history", []) if case_doc else []
+
+    api_key = _get_openai_api_key()
+    tines_url = _tines_url()
+    client = AsyncOpenAI(api_key=api_key)
+    messages = _build_messages(history, system_prompt, prompt_text)
+    tool_calls_used: list[dict] = []
+    all_findings: list[dict] = []
     now = datetime.now(timezone.utc)
+    response_text = ""
+
+    for _ in range(MAX_TOOL_ITERATIONS):
+        completion = await client.chat.completions.create(
+            model=settings.OPENAI_MODEL,
+            messages=messages,
+            tools=TINES_TOOLS,
+            tool_choice="auto",
+        )
+        msg = completion.choices[0].message
+        if not msg.tool_calls:
+            response_text = msg.content or ""
+            break
+        messages.append(
+            {
+                "role": "assistant",
+                "content": msg.content,
+                "tool_calls": [
+                    {
+                        "id": tc.id,
+                        "type": "function",
+                        "function": {"name": tc.function.name, "arguments": tc.function.arguments},
+                    }
+                    for tc in msg.tool_calls
+                ],
+            }
+        )
+        for tc in msg.tool_calls:
+            args = json.loads(tc.function.arguments)
+            raw = (
+                await tines_call_tool(tines_url, tc.function.name, args)
+                if tines_url
+                else {"error": "Tines MCP URL not configured"}
+            )
+            summary = summarize_tool_result(tc.function.name, raw)
+            tool_calls_used.append({"tool": tc.function.name, "args": args, "result_summary": summary})
+            all_findings.extend(_normalize_findings(tc.function.name, summary, now))
+            messages.append({"role": "tool", "tool_call_id": tc.id, "content": json.dumps(raw)})
+
     turn = {
         "id": str(uuid4()),
         "prompt": prompt_text,
         "response": response_text,
+        "tool_calls_used": tool_calls_used,
         "template": body.template,
         "context_flags": body.context_flags,
-        "sources_used": [key for key, enabled in body.context_flags.items() if enabled],
+        "sources_used": [k for k, v in body.context_flags.items() if v],
         "created_at": now,
         "actor": current_user.email,
     }
     await db.cases.update_one(
-        {"_id": ObjectId(case_id)},
-        {
-            "$push": {"console_history": {"$each": [turn], "$position": 0}},
-            "$set": {"updated_at": now},
-        },
+        {"_id": _case_object_id(case_id)},
+        _build_db_update(turn, tool_calls_used, all_findings, now, current_user.email),
     )
     return {"turn": turn}
 
 
 @router.get("/cases/{case_id}/console/templates")
-async def get_templates(current_user=Depends(get_current_user)) -> dict:
+async def get_templates(current_user: UserInDB = Depends(get_current_user)) -> dict:
     return {"templates": list(PROMPT_TEMPLATES.keys())}
