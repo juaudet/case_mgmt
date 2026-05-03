@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import { useConsoleHistory, useSubmitConsolePrompt } from '@/lib/api'
+import { useConsoleHistory, useStreamConsolePrompt } from '@/lib/api'
 import { ContextToggles, CONTEXT_LABELS, type ContextFlags } from './ContextToggles'
 import { PromptHistory } from './PromptHistory'
 
@@ -27,28 +27,29 @@ const DEFAULT_CONTEXT_FLAGS: ContextFlags = {
 
 const MODES = ['Free-form', 'Structured', 'Chain-of-thought']
 
+const TOOL_LABELS: Record<string, string> = {
+  search_for_files_urls_domains_ips_and_comments: 'VirusTotal',
+  search_for_an_ip_address: 'AbuseIPDB check',
+  get_reports_for_an_ip_address: 'AbuseIPDB reports',
+}
+
 export function AnalystConsole({ caseId }: { caseId: string | null }) {
   const [prompt, setPrompt] = useState('')
   const [template, setTemplate] = useState('')
   const [mode, setMode] = useState(MODES[0])
   const [contextFlags, setContextFlags] = useState<ContextFlags>(DEFAULT_CONTEXT_FLAGS)
+
   const consoleHistory = useConsoleHistory(caseId ?? '')
-  const submitPrompt = useSubmitConsolePrompt(caseId ?? '')
+  const { submit, isPending, activeToolCall, streamingText } = useStreamConsolePrompt(caseId ?? '')
   const turns = consoleHistory.data?.history ?? []
-  const activeContextLabels = (Object.keys(contextFlags) as Array<keyof ContextFlags>)
-    .filter((key) => contextFlags[key])
-    .map((key) => CONTEXT_LABELS[key])
 
   function handleSubmit() {
-    if (!prompt.trim() && !template) return
-    submitPrompt.mutate({
+    if (!caseId || (!prompt.trim() && !template)) return
+    submit({
       prompt,
       template: template || undefined,
       context_flags: contextFlags,
     })
-  }
-
-  function handleClear() {
     setPrompt('')
     setTemplate('')
   }
@@ -68,8 +69,26 @@ export function AnalystConsole({ caseId }: { caseId: string | null }) {
         )}
       </div>
 
-      {/* History scrollable area */}
+      {/* History + streaming area */}
       <div className="flex-1 overflow-y-auto px-2 py-2 space-y-2">
+        {/* Active tool-call chip */}
+        {activeToolCall && (
+          <div className="flex items-center gap-1 px-2 py-1 bg-elevated rounded">
+            <span className="w-1.5 h-1.5 rounded-full bg-accent-blue animate-pulse" />
+            <span className="font-mono text-[8px] text-accent-blue">
+              Checking {TOOL_LABELS[activeToolCall] ?? activeToolCall}…
+            </span>
+          </div>
+        )}
+
+        {/* Streaming response bubble */}
+        {isPending && streamingText && (
+          <div className="px-2 py-1.5 bg-elevated rounded">
+            <p className="font-mono text-[9px] text-primary whitespace-pre-wrap">{streamingText}</p>
+            <span className="inline-block w-1 h-3 bg-accent-blue animate-pulse ml-0.5" />
+          </div>
+        )}
+
         {consoleHistory.isLoading ? (
           <p className="font-mono text-[9px] text-dim">Loading history...</p>
         ) : (
@@ -80,10 +99,8 @@ export function AnalystConsole({ caseId }: { caseId: string | null }) {
       {/* Template chips + input */}
       <div className="flex-shrink-0 border-t border-subtle px-2 py-2">
         <p className="font-mono text-[8px] text-dim uppercase tracking-widest mb-1">Analyst prompt</p>
-        {/* Context toggles */}
         <ContextToggles flags={contextFlags} onChange={setContextFlags} />
 
-        {/* Mode chips */}
         <div className="flex flex-wrap gap-1 mt-2">
           {MODES.map((modeLabel) => (
             <button
@@ -101,7 +118,6 @@ export function AnalystConsole({ caseId }: { caseId: string | null }) {
           ))}
         </div>
 
-        {/* Template chips */}
         <div className="flex flex-wrap gap-1 mt-2">
           {TEMPLATES.map((item) => (
             <button
@@ -119,10 +135,9 @@ export function AnalystConsole({ caseId }: { caseId: string | null }) {
           ))}
         </div>
 
-        {/* Input row */}
         <div className="flex gap-1.5 mt-2">
           <input
-            disabled={!caseId}
+            disabled={!caseId || isPending}
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             onKeyDown={(e) => {
@@ -135,12 +150,12 @@ export function AnalystConsole({ caseId }: { caseId: string | null }) {
             placeholder={caseId ? 'ask anything...' : 'no case selected'}
           />
           <button
-            disabled={!caseId || submitPrompt.isPending || (!prompt.trim() && !template)}
+            disabled={!caseId || isPending || (!prompt.trim() && !template)}
             onClick={handleSubmit}
             type="button"
             className="bg-accent-green px-2 py-1 rounded font-mono text-[9px] text-white disabled:opacity-40 hover:opacity-80 transition-opacity"
           >
-            →
+            {isPending ? '…' : '→'}
           </button>
         </div>
       </div>
