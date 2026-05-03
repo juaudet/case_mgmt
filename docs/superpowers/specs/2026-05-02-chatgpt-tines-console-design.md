@@ -202,22 +202,48 @@ Example (WannaCry): `{"sha256": "24d004...", "malicious": 69, "suspicious": 0, "
 
 **AbuseIPDB (`search_for_an_ip_address`)**
 
+Response shape: `{"data": {"ipAddress": ..., "abuseConfidenceScore": ..., ...}}`
+
 ```python
+d = raw.get("data", {})
 {
-    "abuse_confidence_score": data.get("data", {}).get("abuseConfidenceScore", 0),
-    "country_code": data.get("data", {}).get("countryCode"),
-    "is_tor": data.get("data", {}).get("isTor", False),
+    "ip_address": d.get("ipAddress"),
+    "abuse_confidence_score": d.get("abuseConfidenceScore", 0),
+    "country_code": d.get("countryCode"),
+    "isp": d.get("isp"),
+    "domain": d.get("domain"),
+    "is_tor": d.get("isTor", False),
+    "total_reports": d.get("totalReports", 0),
+    "num_distinct_users": d.get("numDistinctUsers", 0),
+    "last_reported_at": d.get("lastReportedAt"),
 }
 ```
+
+Example: `{"ip_address": "14.103.118.74", "abuse_confidence_score": 100, "country_code": "CN", "isp": "Beijing Volcano Engine...", "total_reports": 376, "num_distinct_users": 218}`
 
 **AbuseIPDB Reports (`get_reports_for_an_ip_address`)**
 
+Response shape: `{"data": {"total": ..., "results": [...]}}`
+
 ```python
+d = raw.get("data", {})
+results = d.get("results", [])
 {
-    "total_reports": data.get("data", {}).get("totalReports", 0),
-    "abuse_confidence_score": data.get("data", {}).get("abuseConfidenceScore", 0),
+    "total": d.get("total", 0),
+    "page": d.get("page", 1),
+    "last_page": d.get("lastPage", 1),
+    "sample_comments": [
+        r.get("comment", "")[:200]
+        for r in results[:3]
+        if r.get("comment")
+    ],
+    "categories_seen": sorted({cat for r in results for cat in r.get("categories", [])}),
 }
 ```
+
+Example: `{"total": 377, "page": 1, "last_page": 16, "categories_seen": [18, 22], "sample_comments": ["SSH BruteForce attack", ...]}`
+
+AbuseIPDB category codes relevant to this app: `18` = Brute Force, `22` = SSH.
 
 ---
 
