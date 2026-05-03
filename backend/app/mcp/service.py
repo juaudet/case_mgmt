@@ -7,7 +7,45 @@ from bson.errors import InvalidId
 from fastapi import HTTPException
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
-from app.enrichment.service import call_mcp_tool
+from app.core.config import settings
+from app.enrichment.tines_client import call_tool as tines_call_tool
+
+_TINES_RESOLUTION: dict[str, tuple[str, object]] = {
+    "vt_ip_report": (
+        "search_for_files_urls_domains_ips_and_comments",
+        lambda p: {"query": p["ip"]},
+    ),
+    "vt_hash_lookup": (
+        "search_for_files_urls_domains_ips_and_comments",
+        lambda p: {"query": p["hash"]},
+    ),
+    "vt_domain_scan": (
+        "search_for_files_urls_domains_ips_and_comments",
+        lambda p: {"query": p["domain"]},
+    ),
+    "abuseipdb_check_ip": (
+        "search_for_an_ip_address",
+        lambda p: {"ip_address": p["ip"], "max_age_in_days": int(p.get("max_age_in_days", 30))},
+    ),
+    "abuseipdb_ip_reports": (
+        "get_reports_for_an_ip_address",
+        lambda p: {"ip_address": p["ip"], "max_age_in_days": int(p.get("max_age_in_days", 30))},
+    ),
+}
+
+
+async def _call_tines(tool_name: str, params: dict) -> dict:
+    if settings.DEMO_MODE:
+        return {}
+    url = (settings.TINES_WEBHOOK_URL or settings.TINES_MCP_URL or "").strip()
+    if not url:
+        return {"error": "TINES_WEBHOOK_URL or TINES_MCP_URL is not configured"}
+    entry = _TINES_RESOLUTION.get(tool_name)
+    if not entry:
+        return {"error": f"No Tines mapping for tool: {tool_name}"}
+    tines_name, arg_fn = entry
+    return await tines_call_tool(url, tines_name, arg_fn(params))
+
 
 ALLOWED_TOOLS: dict[str, str] = {
     "vt_ip_report": "VirusTotal",
@@ -93,7 +131,7 @@ async def run_case_tool(
     now = datetime.now(timezone.utc)
 
     try:
-        raw_result = await call_mcp_tool(tool_name, params)
+        raw_result = await _call_tines(tool_name, params)
         status = "completed"
     except Exception as exc:
         raw_result = {"error": str(exc)}
