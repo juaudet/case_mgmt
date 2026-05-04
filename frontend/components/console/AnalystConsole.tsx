@@ -1,63 +1,85 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import ReactMarkdown from 'react-markdown'
 import { useConsoleHistory, useStreamConsolePrompt } from '@/lib/api'
-import { ContextToggles, CONTEXT_LABELS, type ContextFlags } from './ContextToggles'
 import { PromptHistory } from './PromptHistory'
-
-const TEMPLATES = [
-  { key: 'attribution', label: 'Attribution analysis' },
-  { key: 'exfil', label: 'Exfil scope check' },
-  { key: 'blast_radius', label: 'Blast radius' },
-  { key: 'hunt_iocs', label: 'Hunt new IOCs' },
-  { key: 'exec_summary', label: 'Exec summary' },
-  { key: 'remediation', label: 'Remediation steps' },
-  { key: 'timeline', label: 'Reconstruct timeline' },
-  { key: '', label: 'Custom' },
-]
-
-const DEFAULT_CONTEXT_FLAGS: ContextFlags = {
-  case_details: true,
-  ldap: true,
-  ioc_data: true,
-  virustotal: false,
-  abuseipdb: false,
-  mcp_findings: true,
-  playbook_state: true,
-}
-
-const MODES = ['Free-form', 'Structured', 'Chain-of-thought']
 
 const TOOL_LABELS: Record<string, string> = {
   search_for_files_urls_domains_ips_and_comments: 'VirusTotal',
-  search_for_an_ip_address: 'AbuseIPDB check',
-  get_reports_for_an_ip_address: 'AbuseIPDB reports',
+  search_for_an_ip_address: 'AbuseIPDB',
+  get_reports_for_an_ip_address: 'AbuseIPDB',
+}
+
+function MdStream({ text }: { text: string }) {
+  return (
+    <ReactMarkdown
+      components={{
+        p: ({ children }) => (
+          <p className="font-mono text-[9px] text-primary leading-relaxed mb-1 last:mb-0">{children}</p>
+        ),
+        ul: ({ children }) => <ul className="list-disc list-inside space-y-0.5 mb-1">{children}</ul>,
+        ol: ({ children }) => <ol className="list-decimal list-inside space-y-0.5 mb-1">{children}</ol>,
+        li: ({ children }) => (
+          <li className="font-mono text-[9px] text-primary leading-relaxed">{children}</li>
+        ),
+        code: ({ inline, children }: { inline?: boolean; children?: React.ReactNode }) =>
+          inline ? (
+            <code className="font-mono text-[9px] bg-base text-accent-blue px-0.5 rounded">{children}</code>
+          ) : (
+            <pre className="font-mono text-[9px] bg-base text-primary p-1.5 rounded overflow-x-auto mb-1 whitespace-pre-wrap">
+              <code>{children}</code>
+            </pre>
+          ),
+        strong: ({ children }) => <strong className="font-bold">{children}</strong>,
+      }}
+    >
+      {text}
+    </ReactMarkdown>
+  )
 }
 
 export function AnalystConsole({ caseId }: { caseId: string | null }) {
   const [prompt, setPrompt] = useState('')
-  const [template, setTemplate] = useState('')
-  const [mode, setMode] = useState(MODES[0])
-  const [contextFlags, setContextFlags] = useState<ContextFlags>(DEFAULT_CONTEXT_FLAGS)
+  const [pendingPrompt, setPendingPrompt] = useState('')
+  const bottomRef = useRef<HTMLDivElement>(null)
 
   const consoleHistory = useConsoleHistory(caseId ?? '')
   const { submit, isPending, activeToolCall, streamingText } = useStreamConsolePrompt(caseId ?? '')
-  const turns = consoleHistory.data?.history ?? []
+  const turns = [...(consoleHistory.data?.history ?? [])].reverse()
+  const initialScrollDone = useRef(false)
+
+  // Snap to bottom on first load, smooth-scroll on subsequent updates
+  useEffect(() => {
+    if (!bottomRef.current) return
+    if (!initialScrollDone.current && turns.length > 0) {
+      bottomRef.current.scrollIntoView({ behavior: 'instant' })
+      initialScrollDone.current = true
+    } else {
+      bottomRef.current.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [turns, streamingText, isPending])
 
   function handleSubmit() {
-    if (!caseId || (!prompt.trim() && !template)) return
-    submit({
-      prompt,
-      template: template || undefined,
-      context_flags: contextFlags,
-    })
+    if (!caseId || !prompt.trim()) return
+    setPendingPrompt(prompt)
+    submit({ prompt, context_flags: {} })
     setPrompt('')
-    setTemplate('')
   }
 
   function handleReuse(reusedPrompt: string) {
     setPrompt(reusedPrompt)
-    setTemplate('')
   }
+
+  // Clear pending prompt once history refreshes with the new turn
+  useEffect(() => {
+    if (!isPending && pendingPrompt) {
+      setPendingPrompt('')
+    }
+  }, [isPending, pendingPrompt])
+
+  const toolLabel = activeToolCall
+    ? (TOOL_LABELS[activeToolCall] ?? activeToolCall.replace(/_/g, ' '))
+    : null
 
   return (
     <aside className="w-[35%] flex-shrink-0 bg-panel border-l border-subtle flex flex-col overflow-hidden">
@@ -69,73 +91,49 @@ export function AnalystConsole({ caseId }: { caseId: string | null }) {
         )}
       </div>
 
-      {/* History + streaming area */}
-      <div className="flex-1 overflow-y-auto px-2 py-2 space-y-2">
-        {/* Active tool-call chip */}
-        {activeToolCall && (
-          <div className="flex items-center gap-1 px-2 py-1 bg-elevated rounded">
-            <span className="w-1.5 h-1.5 rounded-full bg-accent-blue animate-pulse" />
+      {/* Message feed — scrollable, newest at bottom */}
+      <div className="flex-1 overflow-y-auto px-2 py-2">
+        {consoleHistory.isLoading ? (
+          <p className="font-mono text-[9px] text-dim text-center py-4">Loading history…</p>
+        ) : (
+          <PromptHistory turns={turns} onReuse={handleReuse} />
+        )}
+
+        {/* Optimistic user bubble while waiting */}
+        {isPending && pendingPrompt && (
+          <div className="mt-3 flex justify-end">
+            <div className="max-w-[85%] bg-accent-blue/10 border border-accent-blue/20 rounded-lg px-2.5 py-1.5">
+              <p className="font-mono text-[9px] text-primary leading-relaxed">{pendingPrompt}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Tool-call loading chip */}
+        {isPending && (
+          <div className="mt-2 flex items-center gap-1.5 px-2 py-1.5 bg-elevated border border-subtle rounded-lg w-fit">
+            <span className="w-1.5 h-1.5 rounded-full bg-accent-blue animate-pulse flex-shrink-0" />
             <span className="font-mono text-[8px] text-accent-blue">
-              Checking {TOOL_LABELS[activeToolCall] ?? activeToolCall}…
+              {toolLabel ? `Querying ${toolLabel}…` : 'Thinking…'}
             </span>
           </div>
         )}
 
         {/* Streaming response bubble */}
         {isPending && streamingText && (
-          <div className="px-2 py-1.5 bg-elevated rounded">
-            <p className="font-mono text-[9px] text-primary whitespace-pre-wrap">{streamingText}</p>
-            <span className="inline-block w-1 h-3 bg-accent-blue animate-pulse ml-0.5" />
+          <div className="mt-1 flex justify-start">
+            <div className="max-w-[90%] bg-panel border border-subtle rounded-lg px-2.5 py-1.5">
+              <MdStream text={streamingText} />
+              <span className="inline-block w-1 h-3 bg-accent-blue animate-pulse ml-0.5 align-middle" />
+            </div>
           </div>
         )}
 
-        {consoleHistory.isLoading ? (
-          <p className="font-mono text-[9px] text-dim">Loading history...</p>
-        ) : (
-          <PromptHistory turns={turns} onReuse={handleReuse} />
-        )}
+        <div ref={bottomRef} />
       </div>
 
-      {/* Template chips + input */}
+      {/* Input */}
       <div className="flex-shrink-0 border-t border-subtle px-2 py-2">
-        <p className="font-mono text-[8px] text-dim uppercase tracking-widest mb-1">Analyst prompt</p>
-        <ContextToggles flags={contextFlags} onChange={setContextFlags} />
-
-        <div className="flex flex-wrap gap-1 mt-2">
-          {MODES.map((modeLabel) => (
-            <button
-              key={modeLabel}
-              onClick={() => setMode(modeLabel)}
-              type="button"
-              className={`font-mono text-[8px] px-1.5 py-0.5 rounded transition ${
-                mode === modeLabel
-                  ? 'bg-accent-blue text-white'
-                  : 'bg-elevated text-muted hover:text-primary'
-              }`}
-            >
-              {modeLabel}
-            </button>
-          ))}
-        </div>
-
-        <div className="flex flex-wrap gap-1 mt-2">
-          {TEMPLATES.map((item) => (
-            <button
-              key={item.label}
-              onClick={() => setTemplate(item.key)}
-              type="button"
-              className={`font-mono text-[8px] px-1.5 py-0.5 rounded transition ${
-                template === item.key
-                  ? 'bg-accent-blue text-white'
-                  : 'bg-elevated text-muted hover:text-primary'
-              }`}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-
-        <div className="flex gap-1.5 mt-2">
+        <div className="flex gap-1.5">
           <input
             disabled={!caseId || isPending}
             value={prompt}
@@ -147,10 +145,10 @@ export function AnalystConsole({ caseId }: { caseId: string | null }) {
               }
             }}
             className="flex-1 bg-base border border-subtle rounded font-mono text-[9px] text-primary px-2 py-1 outline-none focus:border-accent-blue disabled:opacity-40 placeholder:text-dim"
-            placeholder={caseId ? 'ask anything...' : 'no case selected'}
+            placeholder={caseId ? 'ask anything…' : 'no case selected'}
           />
           <button
-            disabled={!caseId || isPending || (!prompt.trim() && !template)}
+            disabled={!caseId || isPending || !prompt.trim()}
             onClick={handleSubmit}
             type="button"
             className="bg-accent-green px-2 py-1 rounded font-mono text-[9px] text-white disabled:opacity-40 hover:opacity-80 transition-opacity"

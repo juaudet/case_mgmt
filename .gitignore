@@ -21,6 +21,7 @@ build/
 .env.*.local
 !.env.example
 .secrets/
+backend/secrets/
 
 # Next.js
 .next/
@@ -53,9 +54,9 @@ coverage/
 htmlcov/
 
 # Local agent/tooling state
-.agents/
-.claude/
-
 # Local secret/config helpers
 backend/app/core/secrets.py
 .worktrees/
+.playwright-mcp/
+frontend/tsconfig.tsbuildinfo
+.claude/settings.local.json

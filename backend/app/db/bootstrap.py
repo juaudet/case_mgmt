@@ -60,12 +60,11 @@ async def ensure_demo_data(
     db: AsyncIOMotorDatabase, demo_mode: bool
 ) -> dict[str, int]:
     if not demo_mode:
-        return {"users": 0, "cases": 0, "playbooks": 0}
+        return {"users": 0, "cases": 0}
 
     return {
         "users": await ensure_demo_users(db, demo_mode),
         "cases": await _ensure_demo_cases(db),
-        "playbooks": await _ensure_demo_playbooks(db),
     }
 
 
@@ -84,20 +83,6 @@ async def _ensure_demo_cases(db: AsyncIOMotorDatabase) -> int:
         return 0
 
     await db.cases.insert_many(to_create)
-    return len(to_create)
-
-
-async def _ensure_demo_playbooks(db: AsyncIOMotorDatabase) -> int:
-    playbooks = _load_seed_docs("playbooks.json")
-    existing = {
-        doc["id"]
-        async for doc in db.playbooks.find({}, {"id": 1, "_id": 0})
-    }
-    to_create = [playbook for playbook in playbooks if playbook["id"] not in existing]
-    if not to_create:
-        return 0
-
-    await db.playbooks.insert_many(to_create)
     return len(to_create)
 
 

@@ -54,6 +54,75 @@ _SCENARIO_TEMPLATES: Final[list[tuple[str, str]]] = [
 
 _SOURCES: Final[list[str]] = ["sentinel", "splunk"]
 
+_RAW_INCIDENT_TEMPLATES: Final[list[dict]] = [
+    {
+        "alert_id": "AZ-2024-88412",
+        "source": "Microsoft Sentinel",
+        "rule_name": "BruteForce:SuccessfulSignIn",
+        "severity": "High",
+        "host": {"name": "vpn-gw-01", "os": "Windows Server 2022"},
+        "user": {"upn": "j.smith@corp.local", "department": "Finance"},
+        "network": {"src_ip": "203.0.113.41", "dst_ip": "10.10.0.5", "protocol": "TCP", "port": 443},
+        "event_count": 47,
+        "first_seen": "2024-03-15T08:12:00Z",
+        "last_seen": "2024-03-15T08:21:44Z",
+        "raw_log": "AuthFailure count=47 user=j.smith src=203.0.113.41 gateway=vpn-gw-01",
+    },
+    {
+        "alert_id": "EDR-20240315-00991",
+        "source": "CrowdStrike Falcon",
+        "rule_name": "Suspicious PowerShell Execution",
+        "severity": "High",
+        "host": {"name": "ws-finance-22", "os": "Windows 11"},
+        "user": {"upn": "a.jones@corp.local", "department": "Finance"},
+        "process": {
+            "name": "powershell.exe",
+            "pid": 9812,
+            "cmdline": "powershell.exe -EncodedCommand SQBFAFgA...",
+            "parent": "explorer.exe",
+            "sha256": "a3f1c9b2e847d6f0391cc52a4e1b7f3da3f1c9b2e847d6f0391cc52a4e1b7f3d",
+        },
+        "first_seen": "2024-03-15T09:03:17Z",
+        "last_seen": "2024-03-15T09:03:17Z",
+        "raw_log": "PROCESS_CREATE pid=9812 name=powershell.exe parent=explorer.exe flags=ENCODED_CMD",
+    },
+    {
+        "alert_id": "AAD-2024-55203",
+        "source": "Azure AD Identity Protection",
+        "rule_name": "UnfamiliarSignInProperties",
+        "severity": "Medium",
+        "user": {"upn": "m.chen@corp.local", "department": "Engineering"},
+        "sign_in": {
+            "ip": "198.51.100.12",
+            "location": {"city": "Unknown", "country": "RU"},
+            "asn": "AS12345",
+            "risk_level": "medium",
+            "mfa_result": "notRequired",
+        },
+        "first_seen": "2024-03-15T02:44:00Z",
+        "last_seen": "2024-03-15T02:44:00Z",
+        "raw_log": "SIGNIN user=m.chen ip=198.51.100.12 country=RU risk=medium mfa=notRequired",
+    },
+    {
+        "alert_id": "O365-DLP-20240315-004",
+        "source": "Microsoft Purview",
+        "rule_name": "MassDownloadAnomalyDetected",
+        "severity": "High",
+        "user": {"upn": "r.patel@corp.local", "department": "Legal"},
+        "activity": {
+            "operation": "FileDownloaded",
+            "file_count": 2341,
+            "bytes_transferred": 4892110234,
+            "client_ip": "192.0.2.88",
+            "site": "https://corp.sharepoint.com/sites/Legal",
+            "duration_seconds": 874,
+        },
+        "first_seen": "2024-03-15T06:10:00Z",
+        "last_seen": "2024-03-15T06:24:34Z",
+        "raw_log": "SPO_SYNC user=r.patel files=2341 bytes=4892110234 ip=192.0.2.88 duration=874s",
+    },
+]
+
 # Synthetic IOCs (documentation / test ranges only) — every mock incident includes a subset.
 _MOCK_IOC_POOL: Final[list[IOCRef]] = [
     IOCRef(type="ipv4", value="203.0.113.41", score=68, label="auth-source"),
@@ -85,6 +154,8 @@ def build_random_mock_case_create() -> CaseCreate:
     suffix = random.randint(1000, 9999)
     ioc_n = random.randint(1, 3)
     iocs = random.sample(_MOCK_IOC_POOL, k=min(ioc_n, len(_MOCK_IOC_POOL)))
+    raw_incident = dict(random.choice(_RAW_INCIDENT_TEMPLATES))
+    raw_incident["alert_id"] = f"{raw_incident['alert_id']}-{suffix}"
     return CaseCreate(
         title=f"[{source.upper()}] {title} (#{suffix})",
         description=f"{description} Source: {source}.",
@@ -101,6 +172,7 @@ def build_random_mock_case_create() -> CaseCreate:
             k=random.randint(0, 2),
         ),
         iocs=iocs,
+        raw_incident=raw_incident,
     )
 
 

@@ -22,11 +22,15 @@ services:
       MONGODB_URL: ${MONGODB_URL:-mongodb://mongo:27017}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:-}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-480}
       DEMO_MODE: 'true'
       MOCK_INCIDENT_FEED: 'true'
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_API_KEY_FILE: /run/secrets/openai_key
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o}
-      TINES_WEBHOOK_URL: ${TINES_WEBHOOK_URL:-}
+      TINES_WEBHOOK_URL_FILE: /run/secrets/tines_webhook_url
+    secrets:
+      - openai_key
+      - tines_webhook_url
     depends_on:
       - mongo
       - redis
@@ -48,3 +52,9 @@ services:
 volumes:
   mongo_data:
   redis_data:
+
+secrets:
+  openai_key:
+    file: ./backend/secrets/openai_key
+  tines_webhook_url:
+    file: ./backend/secrets/tines_webhook_url

@@ -114,16 +114,6 @@ export function CaseHeader({ caseData }: { caseData: Case }) {
 
       {/* Action buttons */}
       <div className="flex flex-wrap gap-2">
-        <ActionBtn
-          href={
-            caseData.playbook_id
-              ? `/cases/${caseData.id}/playbook/${caseData.playbook_id}`
-              : undefined
-          }
-          onClick={caseData.playbook_id ? undefined : () => handleStatus('in_progress')}
-        >
-          ▷ Run Playbook
-        </ActionBtn>
         <ActionBtn>↑ Escalate</ActionBtn>
         <ActionBtn>⊞ Summary</ActionBtn>
         <ActionBtn danger onClick={() => handleStatus('false_positive')}>

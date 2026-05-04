@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useSession } from 'next-auth/react'
 import { useState, useCallback } from 'react'
-import type { Case, CaseListItem, ConsoleHistoryTurn, MCPState, Playbook } from '@/types'
+import type { Case, CaseListItem, ConsoleHistoryTurn, MCPState } from '@/types'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
@@ -68,23 +68,6 @@ export function useUpdateCase(id: string) {
       qc.invalidateQueries({ queryKey: ['case', id] })
       qc.invalidateQueries({ queryKey: ['cases'] })
     },
-  })
-}
-
-export function usePlaybooks() {
-  const headers = useAuthHeaders()
-  return useQuery<Playbook[]>({
-    queryKey: ['playbooks'],
-    queryFn: () => apiFetch('/api/v1/playbooks', headers),
-  })
-}
-
-export function usePlaybook(id: string) {
-  const headers = useAuthHeaders()
-  return useQuery<Playbook>({
-    queryKey: ['playbook', id],
-    queryFn: () => apiFetch(`/api/v1/playbooks/${id}`, headers),
-    enabled: !!id,
   })
 }
 
@@ -203,17 +186,3 @@ export function useStreamConsolePrompt(caseId: string) {
   return { submit, isPending, activeToolCall, streamingText }
 }
 
-export function useCompletePlaybookStep(caseId: string) {
-  const headers = useAuthHeaders()
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: (data: { stepId: string; resultData: Record<string, unknown> }) =>
-      apiFetch(`/api/v1/cases/${caseId}/playbook/step/${data.stepId}/complete`, headers, {
-        method: 'POST',
-        body: JSON.stringify({ result_data: data.resultData }),
-      }),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['case', caseId] })
-    },
-  })
-}

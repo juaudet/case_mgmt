@@ -103,6 +103,7 @@ class CaseBase(BaseModel):
 
 class CaseCreate(CaseBase):
     iocs: list[IOCRef] = Field(default_factory=list)
+    raw_incident: dict | None = None
 
 
 class CaseUpdate(BaseModel):
@@ -131,9 +132,8 @@ class Case(CaseBase):
     ldap_context: dict | None = None
     vt_results: dict | None = None
     abuseipdb_results: dict | None = None
-    playbook_id: str | None = None
-    playbook_state: dict | None = None
     parent_case_id: str | None = None
+    raw_incident: dict | None = None
 
 
 class CaseListItem(BaseModel):

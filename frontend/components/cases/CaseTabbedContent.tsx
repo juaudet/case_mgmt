@@ -2,52 +2,13 @@
 import { useState } from 'react'
 import type { Case } from '@/types'
 import { MCPIntegrationPanel } from '@/components/enrichment/MCPIntegrationPanel'
-import { PlaybookRunner } from '@/components/playbooks/PlaybookRunner'
-import { CaseRightPane } from '@/components/cases/CaseRightPane'
-import { usePlaybook, useCompletePlaybookStep } from '@/lib/api'
+import { CaseDetailTab } from '@/components/cases/CaseDetailTab'
 
-const TABS = ['Detail', 'Enrichment', 'Playbook', 'Raw Logs'] as const
+const TABS = ['Detail', 'Enrichment', 'Raw Logs'] as const
 type Tab = (typeof TABS)[number]
 
-function PlaybookTab({ caseData }: { caseData: Case }) {
-  const { data: playbook, isLoading } = usePlaybook(caseData.playbook_id ?? '')
-  const completeStep = useCompletePlaybookStep(caseData.id)
-
-  if (!caseData.playbook_id) {
-    return (
-      <div className="p-4">
-        <p className="font-mono text-[10px] text-muted">No playbook assigned to this case.</p>
-      </div>
-    )
-  }
-
-  if (isLoading) {
-    return (
-      <div className="p-4">
-        <p className="font-mono text-[10px] text-muted">Loading playbook...</p>
-      </div>
-    )
-  }
-
-  if (!playbook) {
-    return (
-      <div className="p-4">
-        <p className="font-mono text-[10px] text-muted">Playbook not found.</p>
-      </div>
-    )
-  }
-
-  return (
-    <PlaybookRunner
-      playbook={playbook}
-      caseData={caseData}
-      onStepComplete={(stepId, resultData) => completeStep.mutate({ stepId, resultData })}
-    />
-  )
-}
-
 export function CaseTabbedContent({ caseData }: { caseData: Case }) {
-  const [tab, setTab] = useState<Tab>('Enrichment')
+  const [tab, setTab] = useState<Tab>('Detail')
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden border-r border-subtle">
@@ -71,13 +32,11 @@ export function CaseTabbedContent({ caseData }: { caseData: Case }) {
 
       {/* Tab panels */}
       <div className="flex-1 overflow-y-auto p-4 pb-6">
-        {tab === 'Detail' && <CaseRightPane caseData={caseData} />}
+        {tab === 'Detail' && <CaseDetailTab caseData={caseData} />}
 
         {tab === 'Enrichment' && (
           <MCPIntegrationPanel caseData={caseData} caseId={caseData.id} />
         )}
-
-        {tab === 'Playbook' && <PlaybookTab caseData={caseData} />}
 
         {tab === 'Raw Logs' && (
           <div className="p-4">

@@ -8,9 +8,6 @@ export function TopBar({ criticalCount = 3 }: { criticalCount?: number }) {
     <header className="flex-shrink-0 h-10 flex items-center justify-between px-4 bg-base border-b border-subtle">
       <div className="flex items-center gap-3">
         <span className="font-mono text-[11px] text-accent-blue font-semibold tracking-wide">⬡ CASEMGMT</span>
-        {criticalCount > 0 && (
-          <span className="font-mono text-[9px] text-severity-critical">● {criticalCount} CRITICAL</span>
-        )}
       </div>
       <div className="flex items-center gap-3">
         <span className="font-mono text-[10px] text-muted">{session?.user?.email}</span>
