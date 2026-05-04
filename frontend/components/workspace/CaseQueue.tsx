@@ -1,6 +1,6 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
-import { useCases, usePlaybooks } from '@/lib/api'
+import { useCases } from '@/lib/api'
 import type { CaseListItem } from '@/types'
 import { animateSpringEntrance } from '@/lib/animations'
 
@@ -56,7 +56,6 @@ export function CaseQueue({
 }) {
   const [search, setSearch] = useState('')
   const { data: cases = [] } = useCases()
-  const { data: playbooks = [] } = usePlaybooks()
   const prevCountRef = useRef(0)
   const firstCardRef = useRef<HTMLButtonElement>(null)
 
@@ -101,20 +100,6 @@ export function CaseQueue({
         )}
       </div>
 
-      {playbooks.length > 0 && (
-        <div className="flex-shrink-0 border-t border-subtle px-2 py-2">
-          <p className="font-mono text-[9px] text-accent-blue tracking-widest mb-1">PLAYBOOKS</p>
-          {playbooks.slice(0, 4).map((pb) => (
-            <button
-              key={pb.id}
-              type="button"
-              className="w-full text-left font-mono text-[9px] text-muted hover:text-accent-blue mb-0.5 truncate"
-            >
-              → {pb.name}
-            </button>
-          ))}
-        </div>
-      )}
     </aside>
   )
 }

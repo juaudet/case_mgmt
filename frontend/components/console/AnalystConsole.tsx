@@ -60,7 +60,7 @@ export function AnalystConsole({ caseId }: { caseId: string | null }) {
   }
 
   return (
-    <aside className="w-[240px] flex-shrink-0 bg-panel border-l border-subtle flex flex-col overflow-hidden">
+    <aside className="w-[35%] flex-shrink-0 bg-panel border-l border-subtle flex flex-col overflow-hidden">
       {/* Header */}
       <div className="flex-shrink-0 px-3 pt-2 pb-1 border-b border-subtle">
         <p className="font-mono text-[9px] text-accent-blue tracking-widest">AI CONSOLE</p>

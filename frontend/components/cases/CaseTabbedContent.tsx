@@ -3,9 +3,10 @@ import { useState } from 'react'
 import type { Case } from '@/types'
 import { MCPIntegrationPanel } from '@/components/enrichment/MCPIntegrationPanel'
 import { PlaybookRunner } from '@/components/playbooks/PlaybookRunner'
+import { CaseRightPane } from '@/components/cases/CaseRightPane'
 import { usePlaybook, useCompletePlaybookStep } from '@/lib/api'
 
-const TABS = ['Enrichment', 'Playbook', 'Raw Logs'] as const
+const TABS = ['Detail', 'Enrichment', 'Playbook', 'Raw Logs'] as const
 type Tab = (typeof TABS)[number]
 
 function PlaybookTab({ caseData }: { caseData: Case }) {
@@ -70,6 +71,8 @@ export function CaseTabbedContent({ caseData }: { caseData: Case }) {
 
       {/* Tab panels */}
       <div className="flex-1 overflow-y-auto p-4 pb-6">
+        {tab === 'Detail' && <CaseRightPane caseData={caseData} />}
+
         {tab === 'Enrichment' && (
           <MCPIntegrationPanel caseData={caseData} caseId={caseData.id} />
         )}
