@@ -28,6 +28,7 @@ class Settings(BaseSettings):
     TINES_MCP_URL: str = ""  # legacy alias if TINES_WEBHOOK_URL is empty
     OPENAI_API_KEY: str = ""
     OPENAI_MODEL: str = "gpt-4o"
+    CORS_ORIGINS: str = "http://localhost:3000"
     DEMO_MODE: bool = True
     # Periodic synthetic cases (requires DEMO_MODE). Set false to load demo seed only.
     MOCK_INCIDENT_FEED: bool = True
