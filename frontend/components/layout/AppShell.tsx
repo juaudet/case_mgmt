@@ -1,8 +1,9 @@
 'use client'
+import React from 'react'
 import { TopBar } from './TopBar'
 
 interface AppShellProps {
-  children: JSX.Element | JSX.Element[] | null | undefined | string | false
+  children: React.ReactNode
   title?: string
   noPadding?: boolean
 }
