@@ -53,7 +53,7 @@ This is the core feature. The flow for a single console turn:
 
 ```
 Browser
-  │  POST /api/v1/cases/{id}/console  { "message": "..." }
+  │  POST /api/v1/cases/{id}/console/stream  { "prompt": "..." }
   │
   ▼
 Backend: console/router.py
@@ -69,15 +69,16 @@ Backend: console/router.py
        │  client.chat.completions.create(                        │
        │      model="gpt-4o",                                    │
        │      tools=[vt_lookup, abuseipdb_check],                │
-       │      stream=True                                        │
-       │  )                                                      │
+       │  )  ← non-streaming; response wrapped into SSE manually │
        │                                                         │
-       │  On text delta  → SSE event: { type: "text", delta }   │
-       │  On tool_call   → SSE event: { type: "tool_start",      │
-       │                               name, args }              │
-       │                  → Call Tines webhook                   │
-       │                  → SSE event: { type: "tool_result",    │
-       │                               name, result }            │
+       │  On text response → SSE: { type: "delta", text }        │
+       │  On tool_call     → SSE: { type: "tool_call",           │
+       │                            tool, args, status:"running"}│
+       │                   → Call Tines webhook                  │
+       │                   → SSE: { type: "tool_result",         │
+       │                            tool, status: "done" }       │
+       │  On finish        → SSE: { type: "done" }               │
+       │  On error         → SSE: { type: "error", message }     │
        │  Loop until no more tool_calls or max iterations        │
        │                                                         │
        └─────────────────────────────────────────────────────────┘
@@ -113,7 +114,7 @@ Tines Story
   └─ Return structured JSON response
 ```
 
-In demo mode (`DEMO_MODE=true`), `tines_client.py` short-circuits and returns fixture JSON from `backend/mock_responses/` without making any outbound HTTP calls.
+In demo mode (`DEMO_MODE=true`), `tines_client.py` short-circuits and returns fixture JSON from `backend/app/mcp/mock_responses.py` without making any outbound HTTP calls.
 
 ---
 
@@ -253,6 +254,5 @@ No secrets are baked into images or plain environment blocks. The pattern for ev
 ## What's Not Built Yet
 
 - MITRE ATT&CK auto-tagging from enrichment results
-- Rate limiting on the console endpoint
 - Full RBAC enforcement at the field level (role model exists, route guards are partial)
 - Admin UI (user management, audit log viewer)

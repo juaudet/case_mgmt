@@ -107,8 +107,7 @@ Fixture scenarios included:
 
 To switch from demo fixtures to real VirusTotal + AbuseIPDB:
 
-1. Set `DEMO_MODE=false` in `docker-compose.yml`
-2. Set `TINES_WEBHOOK_URL` to your Tines MCP webhook URL (the story that handles `tools/call` JSON-RPC)
+1. Set `TINES_WEBHOOK_URL` to your Tines MCP webhook URL (the story that handles `tools/call` JSON-RPC)
 
 The backend calls Tines directly via `TINES_WEBHOOK_URL`.
 
@@ -125,6 +124,7 @@ The backend calls Tines directly via `TINES_WEBHOOK_URL`.
 | `JWT_SECRET_KEY` | required | Min 32 chars; use `JWT_SECRET_KEY_FILE` in Docker |
 | `OPENAI_API_KEY` | — | Required for AI console; use `OPENAI_API_KEY_FILE` in Docker |
 | `OPENAI_MODEL` | `gpt-4o` | Model used by the agentic loop |
+| `CORS_ORIGINS` | `http://localhost:3000` | Comma-separated allowed origins for CORS |
 | `TINES_WEBHOOK_URL` | — | Tines `tools/call` webhook; leave blank in demo mode |
 | `DEMO_MODE` | `true` | Skip live enrichment; auto-seed demo data |
 | `MOCK_INCIDENT_FEED` | `true` | Generate synthetic cases every 10–30s (requires `DEMO_MODE`) |
@@ -159,7 +159,9 @@ The backend calls Tines directly via `TINES_WEBHOOK_URL`.
 ### AI Console
 | Method | Path | Description |
 |--------|------|-------------|
-| `POST` | `/api/v1/cases/{id}/console` | Send a message; returns SSE stream of tokens + tool events |
+| `POST` | `/api/v1/cases/{id}/console/stream` | Send a message; returns SSE stream of tokens + tool events |
+| `GET` | `/api/v1/cases/{id}/console/history` | Retrieve previous console turns for a case |
+| `GET` | `/api/v1/cases/{id}/console/templates` | List available prompt templates |
 
 ### Enrichment
 | Method | Path | Description |
@@ -242,6 +244,6 @@ case_mgmt/
 
 - Frontend polish is uneven — this isn't my daily domain and some views are rougher than others
 - The AI console uses `gpt-4o`; switching to Claude would require the Anthropic SDK (the agentic loop structure is compatible)
-- No rate limiting on the console endpoint yet — a busy analyst could run up OpenAI costs in demo mode
+- The console endpoint is rate-limited to 10 requests/minute per IP, but no per-user budget cap exists yet — a busy analyst could still run up OpenAI costs in demo mode
 
 ---

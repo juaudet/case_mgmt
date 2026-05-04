@@ -5,6 +5,9 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 
 from app.auth import router as auth_router
 from app.cases import router as cases_router
@@ -17,6 +20,8 @@ from app.db.redis import connect_redis, disconnect_redis, get_redis_client
 from app.db.bootstrap import ensure_demo_data
 
 logger = logging.getLogger(__name__)
+
+limiter = Limiter(key_func=get_remote_address)
 
 
 @asynccontextmanager
@@ -43,6 +48,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="SIEM Case Manager API", version="1.0.0", lifespan=lifespan)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,

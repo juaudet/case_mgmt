@@ -1,11 +1,13 @@
 'use client'
 import ReactMarkdown from 'react-markdown'
+import rehypeRaw from 'rehype-raw'
 import { formatDate } from '@/lib/utils'
 import type { ConsoleHistoryTurn } from '@/types'
 
 function MdResponse({ text }: { text: string }) {
   return (
     <ReactMarkdown
+      rehypePlugins={[rehypeRaw]}
       components={{
         p: ({ children }) => (
           <p className="font-mono text-[9px] text-muted leading-relaxed mb-1 last:mb-0">{children}</p>

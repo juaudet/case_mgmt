@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
+import rehypeRaw from 'rehype-raw'
 import { useConsoleHistory, useStreamConsolePrompt } from '@/lib/api'
 import { PromptHistory } from './PromptHistory'
 
@@ -13,6 +14,7 @@ const TOOL_LABELS: Record<string, string> = {
 function MdStream({ text }: { text: string }) {
   return (
     <ReactMarkdown
+      rehypePlugins={[rehypeRaw]}
       components={{
         p: ({ children }) => (
           <p className="font-mono text-[9px] text-primary leading-relaxed mb-1 last:mb-0">{children}</p>

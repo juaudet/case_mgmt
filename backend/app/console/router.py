@@ -3,11 +3,13 @@ from datetime import datetime, timezone
 from uuid import uuid4
 
 from bson import ObjectId
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from openai import AsyncOpenAI
 from pydantic import BaseModel, Field
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 from app.auth.models import UserInDB
 from app.cases.service import get_case
@@ -18,6 +20,7 @@ from app.enrichment.tines_client import call_tool as tines_call_tool
 from app.mcp.service import _case_object_id
 
 router = APIRouter()
+limiter = Limiter(key_func=get_remote_address)
 
 MAX_TOOL_ITERATIONS = 5
 
@@ -247,7 +250,9 @@ def _build_db_update(
 
 
 @router.post("/cases/{case_id}/console/stream")
+@limiter.limit("10/minute")
 async def stream_console(
+    request: Request,
     case_id: str,
     body: ConsolePromptRequest,
     current_user: UserInDB = Depends(get_current_user),
@@ -382,99 +387,6 @@ async def get_console_history(
     if not case:
         raise HTTPException(status_code=404, detail="Case not found")
     return {"history": case.get("console_history", [])}
-
-
-@router.post("/cases/{case_id}/console/prompt")
-async def create_console_prompt(
-    case_id: str,
-    body: ConsolePromptRequest,
-    current_user: UserInDB = Depends(get_current_user),
-    db: AsyncIOMotorDatabase = Depends(get_db),
-) -> dict:
-    case = await get_case(db, case_id)
-    if not case:
-        raise HTTPException(status_code=404, detail="Case not found")
-
-    prompt_text = (
-        PROMPT_TEMPLATES[body.template]
-        if body.template and body.template in PROMPT_TEMPLATES
-        else body.prompt
-    )
-    system_prompt = build_system_prompt(case, body.context_flags)
-    case_doc = await db.cases.find_one({"_id": _case_object_id(case_id)})
-    history: list[dict] = case_doc.get("console_history", []) if case_doc else []
-
-    api_key = _get_openai_api_key()
-    tines_url = _tines_url()
-    client = AsyncOpenAI(api_key=api_key)
-    messages = _build_messages(history, system_prompt, prompt_text)
-    tool_calls_used: list[dict] = []
-    all_findings: list[dict] = []
-    now = datetime.now(timezone.utc)
-    response_text = ""
-
-    for _ in range(MAX_TOOL_ITERATIONS):
-        completion = await client.chat.completions.create(
-            model=settings.OPENAI_MODEL,
-            messages=messages,
-            tools=TINES_TOOLS,
-            tool_choice="auto",
-        )
-        msg = completion.choices[0].message
-        if not msg.tool_calls:
-            response_text = msg.content or ""
-            break
-        messages.append(
-            {
-                "role": "assistant",
-                "content": msg.content,
-                "tool_calls": [
-                    {
-                        "id": tc.id,
-                        "type": "function",
-                        "function": {"name": tc.function.name, "arguments": tc.function.arguments},
-                    }
-                    for tc in msg.tool_calls
-                ],
-            }
-        )
-        for tc in msg.tool_calls:
-            try:
-                args = json.loads(tc.function.arguments)
-            except json.JSONDecodeError:
-                args = {}
-            if tines_url:
-                try:
-                    raw = await tines_call_tool(tines_url, tc.function.name, args)
-                except Exception as exc:
-                    raw = {"error": str(exc)}
-            else:
-                raw = {"error": "Tines MCP URL not configured"}
-            summary = summarize_tool_result(tc.function.name, raw)
-            tool_calls_used.append({"tool": tc.function.name, "args": args, "result_summary": summary})
-            all_findings.extend(_normalize_findings(tc.function.name, summary, now))
-            messages.append({"role": "tool", "tool_call_id": tc.id, "content": json.dumps(raw)})
-    else:
-        response_text = "[Max tool iterations reached without a final response.]"
-
-    turn = {
-        "id": str(uuid4()),
-        "prompt": prompt_text,
-        "response": response_text,
-        "tool_calls_used": tool_calls_used,
-        "template": body.template,
-        "context_flags": body.context_flags,
-        "sources_used": [k for k, v in body.context_flags.items() if v],
-        "created_at": now,
-        "actor": current_user.email,
-    }
-    result = await db.cases.update_one(
-        {"_id": _case_object_id(case_id)},
-        _build_db_update(turn, tool_calls_used, all_findings, now, current_user.email),
-    )
-    if result.matched_count == 0:
-        raise HTTPException(status_code=404, detail="Case not found")
-    return {"turn": turn}
 
 
 @router.get("/cases/{case_id}/console/templates")
