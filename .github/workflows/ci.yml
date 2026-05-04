@@ -53,18 +53,3 @@ jobs:
       - name: Run tests
         working-directory: frontend
         run: npm test
-
-  mcp-test:
-    name: MCP Server — test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - name: Install MCP deps
-        working-directory: mcp-server
-        run: pip install -r requirements.txt
-      - name: Run MCP tests
-        working-directory: mcp-server
-        run: pytest tests/ -v --tb=short

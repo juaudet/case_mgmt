@@ -90,12 +90,6 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className="mt-6 p-3 bg-[#0F1923] border border-[#1E3048] rounded-lg">
-            <p className="text-xs text-slate-500 font-medium mb-1">Demo Credentials</p>
-            <p className="text-xs text-slate-400">analyst: analyst.kim@corp.local / Demo1234!</p>
-            <p className="text-xs text-slate-400">tier2: lead.reyes@corp.local / Demo1234!</p>
-            <p className="text-xs text-slate-400">admin: admin@corp.local / Admin5678!</p>
-          </div>
         </div>
       </div>
     </div>
