@@ -128,7 +128,14 @@ async function* _streamConsoleEvents(
     headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify(body),
   })
-  if (!res.ok) throw new Error(`API error ${res.status}`)
+  if (!res.ok) {
+    let detail = `API error ${res.status}`
+    try {
+      const body = await res.json()
+      if (body?.detail) detail = `${res.status}: ${body.detail}`
+    } catch { /* ignore parse errors */ }
+    throw new Error(detail)
+  }
   const reader = res.body!.getReader()
   const decoder = new TextDecoder()
   let buffer = ''
@@ -157,11 +164,13 @@ export function useStreamConsolePrompt(caseId: string) {
   const [isPending, setIsPending] = useState(false)
   const [activeToolCall, setActiveToolCall] = useState<string | null>(null)
   const [streamingText, setStreamingText] = useState('')
+  const [streamError, setStreamError] = useState<string | null>(null)
 
   const submit = useCallback(
     async (data: { prompt: string; template?: string; context_flags: Record<string, boolean> }) => {
       setIsPending(true)
       setStreamingText('')
+      setStreamError(null)
       setActiveToolCall(null)
       try {
         const url = `${API_URL}/api/v1/cases/${caseId}/console/stream`
@@ -175,6 +184,8 @@ export function useStreamConsolePrompt(caseId: string) {
           }
           if (event.type === 'error') throw new Error(event.message)
         }
+      } catch (err) {
+        setStreamError(err instanceof Error ? err.message : String(err))
       } finally {
         setIsPending(false)
         setActiveToolCall(null)
@@ -183,6 +194,6 @@ export function useStreamConsolePrompt(caseId: string) {
     [caseId, headers, qc]
   )
 
-  return { submit, isPending, activeToolCall, streamingText }
+  return { submit, isPending, activeToolCall, streamingText, streamError }
 }
 

@@ -14,7 +14,6 @@ from app.cases.service import get_case
 from app.console.service import build_system_prompt
 from app.core.config import settings
 from app.core.deps import get_current_user, get_db
-from app.core.secrets import read_env_or_secret_file
 from app.enrichment.tines_client import call_tool as tines_call_tool
 from app.mcp.service import _case_object_id
 
@@ -111,12 +110,7 @@ class ConsolePromptRequest(BaseModel):
 
 
 def _get_openai_api_key() -> str:
-    try:
-        key = read_env_or_secret_file("OPENAI_API_KEY", on_file_error="raise")
-    except RuntimeError as exc:
-        raise HTTPException(
-            status_code=503, detail="OpenAI API key file is not readable"
-        ) from exc
+    key = settings.OPENAI_API_KEY.strip()
     if key:
         return key
     raise HTTPException(status_code=503, detail="OpenAI API key is not configured")

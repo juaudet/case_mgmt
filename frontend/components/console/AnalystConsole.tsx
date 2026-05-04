@@ -44,7 +44,7 @@ export function AnalystConsole({ caseId }: { caseId: string | null }) {
   const bottomRef = useRef<HTMLDivElement>(null)
 
   const consoleHistory = useConsoleHistory(caseId ?? '')
-  const { submit, isPending, activeToolCall, streamingText } = useStreamConsolePrompt(caseId ?? '')
+  const { submit, isPending, activeToolCall, streamingText, streamError } = useStreamConsolePrompt(caseId ?? '')
   const turns = [...(consoleHistory.data?.history ?? [])].reverse()
   const initialScrollDone = useRef(false)
 
@@ -124,6 +124,16 @@ export function AnalystConsole({ caseId }: { caseId: string | null }) {
             <div className="max-w-[90%] bg-panel border border-subtle rounded-lg px-2.5 py-1.5">
               <MdStream text={streamingText} />
               <span className="inline-block w-1 h-3 bg-accent-blue animate-pulse ml-0.5 align-middle" />
+            </div>
+          </div>
+        )}
+
+        {/* Error bubble */}
+        {!isPending && streamError && (
+          <div className="mt-2 flex justify-start">
+            <div className="max-w-[90%] bg-red-950/40 border border-red-700/40 rounded-lg px-2.5 py-1.5 flex items-start gap-1.5">
+              <span className="font-mono text-[9px] text-red-400 leading-relaxed flex-shrink-0">✕</span>
+              <p className="font-mono text-[9px] text-red-400 leading-relaxed">{streamError}</p>
             </div>
           </div>
         )}

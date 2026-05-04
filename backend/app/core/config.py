@@ -39,7 +39,7 @@ class Settings(BaseSettings):
         """Prefer *_FILE mounts (Docker secrets / Key Vault sync) over plain env."""
         if not isinstance(data, dict):
             data = {}
-        for key in ("JWT_SECRET_KEY", "MONGODB_URL", "REDIS_URL", "TINES_WEBHOOK_URL", "TINES_MCP_URL"):
+        for key in ("JWT_SECRET_KEY", "MONGODB_URL", "REDIS_URL", "TINES_WEBHOOK_URL", "TINES_MCP_URL", "OPENAI_API_KEY"):
             file_path = os.environ.get(f"{key}_FILE")
             if not file_path:
                 continue
