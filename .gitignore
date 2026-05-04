@@ -55,8 +55,7 @@ htmlcov/
 
 # Local agent/tooling state
 # Local secret/config helpers
-backend/app/core/secrets.py
 .worktrees/
 .playwright-mcp/
 frontend/tsconfig.tsbuildinfo
-.claude/settings.local.json
+.claude/
